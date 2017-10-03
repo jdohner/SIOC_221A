@@ -71,14 +71,17 @@ ylabel('probability', 'FontSize',16);
 %% extending the record
 % extending record to include SST data from 2005 to 2017
 
+
+
 % access sccoos data via THREDDS
 
-ncidArray = zeros(1,13); % create empty array to hold ncids for each file
+numYears = 2017-2005 + 1;
+ncidArray = zeros(1,numYears); % create empty array to hold ncids for each file
 
 for i = 2005:2017
     % get file names for each of timeseries to be called from sccoos
     fileName = strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(i), '.nc');
-    for j=1:13
+    for j=1:numYears
         ncidArray(j) = netcdf.open(fileName,'NOWRITE');
     end
     
@@ -90,42 +93,30 @@ ntempExtend = netcdf.inqVarID(ncidArray(1),'temperature')
 % these will return 0 and 1, telling you that time is variable number 0 and temperature is variable number 1
 
 % empty arrays to hold time and temp data for each year between 2005-2017
-pierTimeExtend = nan(1,13);
-pierTempExtend = nan(1,13);
+pierTimeExtend = [];
+pierTempExtend = [];
 
-% debugging starting here
-% issue is with dimension mismatch for filling pierTimeExtend (need to use
-% multidimensional array)
-
-test = netcdf.getVar(ncidArray(1),ntimeExtend);
-
-x = 'hello'
-
-
-s =  'hello pt 2'
-
-
-for i = 1:13
-    pierTimeExtend(i) = netcdf.getVar(ncidArray(i),ntimeExtend);
-    pierTempExtend(i) = netcdf.getVar(ncidArray(i),ntempExtend);
-end
+for i = 1:numYears;
+    % get values for time and temp for element i in ncidArray
+    newTime = netcdf.getVar(ncidArray(i),ntimeExtend);
+    newTemp = netcdf.getVar(ncidArray(i),ntempExtend);
+    % append values to time and temp arrays
+    pierTimeExtend = [pierTimeExtend; newTime];
+    pierTempExtend = [pierTempExtend; newTemp];
+end 
 
 % plot the time series by looping through pierTimeExtend and pierTempExtend
 figure('name','Scripps_Pier_SST_2005-2017');
-for i = 1:13
-    % use double to force the time to be a real number
-    % divide the time by 24*3600 to convert seconds into days since 1970
-    time = double(pierTime(i)/24/3600+date0);
-    hold on
-    plot(time, pierTempExtend(i),'LineWidth',1);
-end
+date0=datenum(1970,1,1); % give reference date (first date)
+time = double(pierTimeExtend/24/3600+date0);
+plot(time, pierTempExtend,'LineWidth',1);
 
 
 % label the x-axis in months
 datetick('x','mmm');
 set(gca,'FontSize',16);
 title('Scripps Pier SST');
-xlabel('months (of 2017)','FontSize',16);
+xlabel('months','FontSize',16);
 ylabel('temperature (oC)', 'FontSize',16);
 
 
