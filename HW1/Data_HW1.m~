@@ -65,58 +65,54 @@ title('Probability Density Function of SST');
 xlabel('temperature (oC)','FontSize',16);
 ylabel('probability', 'FontSize',16);
 
-% The plot does not look like any of the distributions we discussed in
+% TODO: The plot does not look like any of the distributions we discussed in
 % class.
+
+%% debugging 2005 
+
+time2005 = ncread('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-2005.nc','time');
+temp2005 = ncread('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-2005.nc','temperature');
+
+plot(time2005, temp2005);
+
+datetick('x','mmm');
+set(gca,'FontSize',16);
+title('Scripps Pier SST');
+xlabel('year','FontSize',16);
+ylabel('temperature (oC)', 'FontSize',16);
 
 %% extending the record
 % extending record to include SST data from 2005 to 2017
 
-
-
+clear all; close all; 
+numYears = 2017-2005 + 1;
 % access sccoos data via THREDDS
 
-numYears = 2017-2005 + 1;
-ncidArray = zeros(1,numYears); % create empty array to hold ncids for each file
+% create empty arrays to hold time and temp data
+timeExtend = [];
+tempExtend = [];
+% loop through each year starting with 2005 to retrieve data
+for i = 1:numYears
+    n = (i-1) + 2005; % get value for each year starting with first year
+    timeExtend = [timeExtend; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(n), '.nc'),'time')];
+    tempExtend = [tempExtend; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(n), '.nc'),'temperature')];
 
-for i = 2005:2017
-    % get file names for each of timeseries to be called from sccoos
-    fileName = strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(i), '.nc');
-    for j=1:numYears
-        ncidArray(j) = netcdf.open(fileName,'NOWRITE');
-    end
-    
 end
 
-% determine the variable number that you want to read
-ntimeExtend = netcdf.inqVarID(ncidArray(1),'time')
-ntempExtend = netcdf.inqVarID(ncidArray(1),'temperature')
-% these will return 0 and 1, telling you that time is variable number 0 and temperature is variable number 1
+% remove the data point close to 100 deg C that was throwing off the scale
+kbad = find(tempExtend>90);
+tempExtend(kbad) = nan;
 
-% empty arrays to hold time and temp data for each year between 2005-2017
-pierTimeExtend = [];
-pierTempExtend = [];
-
-for i = 1:numYears;
-    % get values for time and temp for element i in ncidArray
-    newTime = netcdf.getVar(ncidArray(i),ntimeExtend);
-    newTemp = netcdf.getVar(ncidArray(i),ntempExtend);
-    % append values to time and temp arrays
-    pierTimeExtend = [pierTimeExtend; newTime];
-    pierTempExtend = [pierTempExtend; newTemp];
-end 
-
-% plot the time series by looping through pierTimeExtend and pierTempExtend
-figure('name','Scripps_Pier_SST_2005-2017');
+% plot the time series
 date0=datenum(1970,1,1); % give reference date (first date)
-time = double(pierTimeExtend/24/3600+date0);
-plot(time, pierTempExtend,'LineWidth',1);
-
+time = double(timeExtend/24/3600+date0);
+figure('name','Scripps_Pier_SST_2005-2017');
+plot(time, tempExtend,'LineWidth',1);
 
 % label the x-axis in months
-datetick('x','mmm');
+datetick('x','yyyy');
 set(gca,'FontSize',16);
 title('Scripps Pier SST');
-xlabel('months','FontSize',16);
+xlabel('year','FontSize',16);
 ylabel('temperature (oC)', 'FontSize',16);
-
 
