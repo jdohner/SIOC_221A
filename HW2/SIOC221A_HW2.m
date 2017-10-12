@@ -1,10 +1,8 @@
 % file SIOC 221A HW 2
 % 
-% author Julia Dohner
+% author Julia Dohner, with help from Margaret Lindeman on subsampling
 %
 % due date October 12, 2017
-%
-% file Plotting salinity record from Shores Station Program at Scripps Pier
 
 clear all; close all;
 
@@ -35,14 +33,12 @@ for i = 1:numYears
 
 end
 
-
 %looping through to remove bad data from salinity record
 for i = 1:length(salinityAuto)
     if salinity_flagPrimary_Auto(i) ~= 1
         salinityAuto(i) = nan;
     end
 end
-
 
 % plot the time series
 date0=datenum(1970,1,1); % give reference date (first date)
@@ -70,18 +66,18 @@ fileID = fopen(filein);
 headerInfo = textscan(fileID, '%s', 27, 'delimiter', '\n');
 dataInfo = textscan(fileID, '%s', 9, 'delimiter', '\t');
 % read in the data
-C = textscan(fileID, '%f %f %f %f %f %f %f %f %f', 'delimiter', '\t \t \t \t \t \t \t \t \t');
+matchingTimes = textscan(fileID, '%f %f %f %f %f %f %f %f %f', 'delimiter', '\t \t \t \t \t \t \t \t \t');
 
 %extract the data from the cell matrix
-yearDataManual = C{1};
-monthDataManual = C{2};
-dayDataManual = C{3};
-timeDataManual = C{4}; 
-timeFlagDataManual = C{5};
-salinityDataManual = C{6};
-salinityFlagDataManual = C{7};
-bottleSalDataManual = C{8};
-bottleSalFlagDataManual = C{9};
+yearDataManual = matchingTimes{1};
+monthDataManual = matchingTimes{2};
+dayDataManual = matchingTimes{3};
+timeDataManual = matchingTimes{4}; 
+timeFlagDataManual = matchingTimes{5};
+salinityDataManual = matchingTimes{6};
+salinityFlagDataManual = matchingTimes{7};
+bottleSalDataManual = matchingTimes{8};
+bottleSalFlagDataManual = matchingTimes{9};
 
 
 %looping through to remove bad data from salinity record
@@ -111,12 +107,12 @@ time_minute = timeDataManual-time_hour*100;
 time_second = zeros(length(yearDataManual),1);        
         
 %turn the year, mo, day, time into a MATLAB date
-dateDataManual = datenum(yearDataManual, monthDataManual, dayDataManual, time_hour, time_minute, time_second);
+timeManual = datenum(yearDataManual, monthDataManual, dayDataManual, time_hour, time_minute, time_second);
 
 
 %plot time series
 figure('name','Scripps_Pier_Salinity_1916-2004_Manual');
-plot(dateDataManual,salinityDataManual,'-')
+plot(timeManual,salinityDataManual,'-')
 set(gca,'FontSize',16);
 t1 = datenum('22-august-1916');
 t2 = datenum('31-october-2014');
@@ -133,40 +129,28 @@ stdSalinityManual = nanstd(salinityDataManual);
 
 %% subsampling to compare manual and auto
 
-% only compare data from manual and auto that were taken at the same time
-% comparing between Jan 1 2005 and Jan 1 2015
+% choosing only the automated data taken at the same time as the manual
+% data
 
-datevecManual = datevec(dateDataManual);
-datevecManual_trunc = [datevecManual(:,1:4), zeros(length(datevecManual),2)];
+% creating new vector of manual time data without seconds data
+datevecManual = datevec(timeManual);
+datevecManual_trunc = [datevecManual(:,1:5), zeros(length(datevecManual),1)];
 datevecManual_rounded = datenum(datevecManual_trunc);
 
-date0=datenum(1970,1,1); % give reference date (first date)
-timeSubsampAuto = double(timeAuto/24/3600+date0);
+% creating new vector of automated time data without seconds data
+timeSubsampAuto = double(timeAuto)/24/3600+date0;
 datevecAuto = datevec(timeSubsampAuto);
-datevecAuto_trunc = [datevecAuto(:,1:4), zeros(length(datevecAuto),2)];
+datevecAuto_trunc = [datevecAuto(:,1:5), zeros(length(datevecAuto),1)];
 datevecAuto_rounded = datenum(datevecAuto_trunc);
 
-%compare starting June 16 2005 (start of auto record)
-%matchingDates = find(datevecAuto_rounded == datevecManual_rounded);
-[C, ia, ib] = intersect(datevecAuto_rounded,datevecManual_rounded);
+% find times in automated and manual records that match
+[matchingTimes, indexAuto, indexManual] = intersect(datevecAuto_rounded,datevecManual_rounded);
 
-% findkDateVectorManual = datenum(yearDataManual, monthDataManual, dayDataManual);
-% startDate = datenum('1-january-2005');
-% endDate = datenum('1-january-2015');
-% kStartManual = find(findkDateVectorManual == startDate); %this works! continue!
-% subsampManual(:,1) = dateDataManual(kStartManual:end);
-% subsampManual(:,2) = salinityDataManual(kStartManual:end);
-% 
-% findkDateVectorAuto = datenum(yearDataManual, monthDataManual, dayDataManual);
-% kStartAuto = find(findkDateVectorAuto == startDate); 
-% subsampAuto(:,1) = double(timeAuto(kStartManual:end));
-% subsampAuto(:,2) = double(salinityAuto(kStartManual:end));
-% 
-% meanSubMan = nanmean(subsampManual(:,2));
-% stdSubMan = nanstd(subsampManual(:,2));
-% 
-% meanSubAuto = nanmean(subsampAuto(:,2));
-% stdSubAuto = nanstd(subsampAuto(:,2));
+meanSubAuto = nanmean(salinityAuto(indexAuto));
+stdSubAuto = nanstd(salinityAuto(indexAuto));
+
+meanSubManual = nanmean(salinityDataManual(indexManual));
+stdSubManual = nanstd(salinityDataManual(indexManual));
 
 %% theoretical PDFs
 
@@ -204,12 +188,12 @@ end
 binomialDist = binomialDist-5;
 binomialDist = binomialDist*(stdSalinityAuto/std(binomialDist)); % scale the standard deviation
 binomialDist = binomialDist + (meanSalinityAuto - mean(binomialDist)); %scale the mean
-%plot(x,n);
 
 
 figure
 subplot(5,1,1);
 plot(x,gaussianY);
+title('Theoretical Probability Density Function Plots');
 legend('MATLAB Gaussian PDF');
 xlabel('Salinity (psu)');
 ylabel('Probability');
@@ -234,6 +218,7 @@ histogram(binomialDist, EDGES,'Normalization','pdf');
 legend('Fake Data Binomial PDF');
 xlabel('Salinity (psu)');
 ylabel('Probability');
+
 
 
 
@@ -272,7 +257,3 @@ ylabel('probability', 'FontSize',16);
 
 stderrorAuto = stdSalinityAuto/sqrt(length(salinityAuto)); % 3.7e-04
 stderrorManual = stdSalinityManual/sqrt(length(salinityDataManual)); %9.7e-4
-
-%% summary
-
-%value of manual data relative to continuous data?

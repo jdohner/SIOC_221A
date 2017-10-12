@@ -129,4 +129,70 @@
 \fs20 \cf2 %adjust so stdev is correct, add the right mean
 \fs24 \cf0 \
 \
+\
+subsampling:\
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf2 %date0=datenum(1970,1,1); % give reference date (first date)
+\fs24 \cf0 \
+
+\fs20 \cf2 %compare starting June 16 2005 (start of auto record)
+\fs24 \cf0 \
+
+\fs20 \cf2 %matchingDates = find(datevecAuto_rounded == datevecManual_rounded);
+\fs24 \cf0 \
+\
+
+\fs20 \cf2 % findkDateVectorManual = datenum(yearDataManual, monthDataManual, dayDataManual);
+\fs24 \cf0 \
+
+\fs20 \cf2 % startDate = datenum('1-january-2005');
+\fs24 \cf0 \
+
+\fs20 \cf2 % endDate = datenum('1-january-2015');
+\fs24 \cf0 \
+
+\fs20 \cf2 % kStartManual = find(findkDateVectorManual == startDate); %this works! continue!
+\fs24 \cf0 \
+
+\fs20 \cf2 % subsampManual(:,1) = dateDataManual(kStartManual:end);
+\fs24 \cf0 \
+
+\fs20 \cf2 % subsampManual(:,2) = salinityDataManual(kStartManual:end);
+\fs24 \cf0 \
+
+\fs20 \cf2 % 
+\fs24 \cf0 \
+
+\fs20 \cf2 % findkDateVectorAuto = datenum(yearDataManual, monthDataManual, dayDataManual);
+\fs24 \cf0 \
+
+\fs20 \cf2 % kStartAuto = find(findkDateVectorAuto == startDate); 
+\fs24 \cf0 \
+
+\fs20 \cf2 % subsampAuto(:,1) = double(timeAuto(kStartManual:end));
+\fs24 \cf0 \
+
+\fs20 \cf2 % subsampAuto(:,2) = double(salinityAuto(kStartManual:end));
+\fs24 \cf0 \
+
+\fs20 \cf2 % 
+\fs24 \cf0 \
+
+\fs20 \cf2 % meanSubMan = nanmean(subsampManual(:,2));
+\fs24 \cf0 \
+
+\fs20 \cf2 % stdSubMan = nanstd(subsampManual(:,2));
+\fs24 \cf0 \
+
+\fs20 \cf2 % 
+\fs24 \cf0 \
+
+\fs20 \cf2 % meanSubAuto = nanmean(subsampAuto(:,2));
+\fs24 \cf0 \
+
+\fs20 \cf2 % stdSubAuto = nanstd(subsampAuto(:,2));
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \
 }
