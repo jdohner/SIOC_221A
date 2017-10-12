@@ -1,0 +1,132 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red34\green139\blue34;\red160\green32\blue240;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs20 \cf0  
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf2 % automated data pdf for a variety of distributions (given the mean & std)
+\fs24 \cf0 \
+
+\fs20 \cf2 %pd1 = makedist('Normal', meanSalinityAuto, stdSalinityAuto);
+\fs24 \cf0 \
+
+\fs20 \cf2  
+\fs24 \cf0 \
+
+\fs20 \cf2 %y = pdf(pd1,x);
+\fs24 \cf0 \
+
+\fs20 \cf2  
+\fs24 \cf0 \
+
+\fs20 \cf2 %y = normpdf(x,meanSalinityAuto,stdSalinityAuto);
+\fs24 \cf0 \
+\
+\
+
+\fs20 \cf2 % figure('name','fake_data_bimodal');
+\fs24 \cf0 \
+
+\fs20 \cf2 % n = 1:1:3337;
+\fs24 \cf0 \
+
+\fs20 \cf2 % c = binornd(n,1./n);
+\fs24 \cf0 \
+
+\fs20 \cf2 % plot(x,c');\
+\
+% solved for N and P in wolfram alpha using:
+\fs24 \cf0 \
+
+\fs20 \cf2 % mean = N*P
+\fs24 \cf0 \
+
+\fs20 \cf2 % variance = N*P(1-P)
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 N = 34;
+\fs24 \
+
+\fs20 P = 0.994781;
+\fs24 \
+
+\fs20 pdBimodal = makedist(\cf3 'Binomial'\cf0 ,N,P);
+\fs24 \
+
+\fs20 bimodalY = pdf(pdBimodal,x);
+\fs24 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf2 %generate dataset using uniform dist and rand, ask what std and mean if you
+\fs24 \cf0 \
+
+\fs20 \cf2 %use rand? how do you adjust so mean matches mean of my data, so std
+\fs24 \cf0 \
+
+\fs20 \cf2 %matches
+\fs24 \cf0 \
+
+\fs20 \cf2  
+\fs24 \cf0 \
+
+\fs20 \cf2 %
+\fs24 \cf0 \
+\
+
+\fs20 \cf2 %bimodalY = pdf('Binomial', x, meanSalinityAuto, stdSalinityAuto);
+\fs24 \cf0 \
+
+\fs20 \cf2 %take uniform dist, if value is above 1/2, make upper limit, if below 1/2
+\fs24 \cf0 \
+
+\fs20 \cf2 %make lower limit
+\fs24 \cf0 \
+
+\fs20 \cf2 %adjust values so not quite +/- stdev, whatever it takes to give the right
+\fs24 \cf0 \
+
+\fs20 \cf2 %stdev
+\fs24 \cf0 \
+
+\fs20 \cf2 %underscoring the fact that the normal dist and all things we associate
+\fs24 \cf0 \
+
+\fs20 \cf2 %with it is only because its a normal distribution, doesn't apply for
+\fs24 \cf0 \
+
+\fs20 \cf2 %different distributions
+\fs24 \cf0 \
+
+\fs20 \cf2 %formal way to transform distribution into any other distribution - useful
+\fs24 \cf0 \
+
+\fs20 \cf2 %want std of dataset I produce to be same as measured
+\fs24 \cf0 \
+
+\fs20 \cf2 %for uniform, use rand to generate, then scale so mean and std are correct
+\fs24 \cf0 \
+
+\fs20 \cf2 %add what you need- take rand, subtract 0.5 (mean) so get something around
+\fs24 \cf0 \
+
+\fs20 \cf2 %0, ask what std is, then scale the values so you get the right std
+\fs24 \cf0 \
+
+\fs20 \cf2 %(multiplicative), then once correct, add the mean
+\fs24 \cf0 \
+
+\fs20 \cf2 %do the same for coin toss- create fake dataset with high and low values,
+\fs24 \cf0 \
+
+\fs20 \cf2 %adjust so stdev is correct, add the right mean
+\fs24 \cf0 \
+\
+}
