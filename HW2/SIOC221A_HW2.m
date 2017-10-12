@@ -18,9 +18,9 @@ salinityAuto = [];
 
 % loop through each year starting with 2005 to retrieve data
 for i = 1:numYears
-    n = (i-1) + 2005; % get value for each year starting with first year
-    timeAuto = [timeAuto; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(n), '.nc'),'time')];
-    salinityAuto = [salinityAuto; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(n), '.nc'),'salinity')];
+    binomialDist = (i-1) + 2005; % get value for each year starting with first year
+    timeAuto = [timeAuto; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(binomialDist), '.nc'),'time')];
+    salinityAuto = [salinityAuto; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(binomialDist), '.nc'),'salinity')];
 
 end
 
@@ -30,8 +30,8 @@ salinity_flagPrimary_Auto = [];
 
 % retrieve flagged data
 for i = 1:numYears
-    n = (i-1) + 2005; % get value for each year starting with first year
-    salinity_flagPrimary_Auto = [salinity_flagPrimary_Auto; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(n), '.nc'),'salinity_flagPrimary')];
+    binomialDist = (i-1) + 2005; % get value for each year starting with first year
+    salinity_flagPrimary_Auto = [salinity_flagPrimary_Auto; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(binomialDist), '.nc'),'salinity_flagPrimary')];
 
 end
 
@@ -56,7 +56,7 @@ set(gca,'FontSize',16);
 title('Scripps Pier Salinity - Automated Record');
 xlabel('Date');
 datetick('x','mm/dd/yy','keeplimits')
-ylabel('Practical Salinity Units (1e-3)');
+ylabel('Practical Salinity Units');
 
 % mean salinity
 meanSalinityAuto = nanmean(salinityAuto);
@@ -93,6 +93,8 @@ for i = 1:length(yearDataManual)
             salinityDataManual(i) = nan;
     elseif bottleSalFlagDataManual(i) ~= 0
         bottleSalDataManual(i) = nan;
+    elseif salinityDataManual(i) == 720
+        salinityDataManual(i) = nan;
     end
 end
 
@@ -109,12 +111,12 @@ time_minute = timeDataManual-time_hour*100;
 time_second = zeros(length(yearDataManual),1);        
         
 %turn the year, mo, day, time into a MATLAB date
-dateData = datenum(yearDataManual, monthDataManual, dayDataManual, time_hour, time_minute, time_second);
+dateDataManual = datenum(yearDataManual, monthDataManual, dayDataManual, time_hour, time_minute, time_second);
 
 
 %plot time series
 figure('name','Scripps_Pier_Salinity_1916-2004_Manual');
-plot(dateData,salinityDataManual,'-')
+plot(dateDataManual,salinityDataManual,'-')
 set(gca,'FontSize',16);
 t1 = datenum('22-august-1916');
 t2 = datenum('31-october-2014');
@@ -123,7 +125,7 @@ xlim([t1 t2]);
 datetick('x','mm/dd/yy','keeplimits')
 xlabel('Date')
 title('Scripps Pier Salinity - Manual Record')
-ylabel('Practical Salinity Units s(1e-3)');
+ylabel('Practical Salinity Units');
 
 % mean salinity
 meanSalinityManual = nanmean(salinityDataManual);
@@ -134,55 +136,106 @@ stdSalinityManual = nanstd(salinityDataManual);
 % only compare data from manual and auto that were taken at the same time
 % comparing between Jan 1 2005 and Jan 1 2015
 
+datevecManual = datevec(dateDataManual);
+datevecManual_trunc = [datevecManual(:,1:4), zeros(length(datevecManual),2)];
+datevecManual_rounded = datenum(datevecManual_trunc);
 
-% subAuto = nan[];
-% % loop from Jan 1 2005 to Jan 1 2015
-% startDate = datenum('2005');
-% endDate = datenum('2015');
-% kStartManual = find(yearData == startDate);
-% for i = startDate:endDate
+date0=datenum(1970,1,1); % give reference date (first date)
+timeSubsampAuto = double(timeAuto/24/3600+date0);
+datevecAuto = datevec(timeSubsampAuto);
+datevecAuto_trunc = [datevecAuto(:,1:4), zeros(length(datevecAuto),2)];
+datevecAuto_rounded = datenum(datevecAuto_trunc);
 
-testDateVector = datenum(yearDataManual, monthDataManual, dayDataManual);
-startDate = ('1-january-2005');
-endDate = ('1-january-2015');
-kStartManual = find(testDateVector == startDate);
+%compare starting June 16 2005 (start of auto record)
+%matchingDates = find(datevecAuto_rounded == datevecManual_rounded);
+[C, ia, ib] = intersect(datevecAuto_rounded,datevecManual_rounded);
+
+% findkDateVectorManual = datenum(yearDataManual, monthDataManual, dayDataManual);
+% startDate = datenum('1-january-2005');
+% endDate = datenum('1-january-2015');
+% kStartManual = find(findkDateVectorManual == startDate); %this works! continue!
+% subsampManual(:,1) = dateDataManual(kStartManual:end);
+% subsampManual(:,2) = salinityDataManual(kStartManual:end);
+% 
+% findkDateVectorAuto = datenum(yearDataManual, monthDataManual, dayDataManual);
+% kStartAuto = find(findkDateVectorAuto == startDate); 
+% subsampAuto(:,1) = double(timeAuto(kStartManual:end));
+% subsampAuto(:,2) = double(salinityAuto(kStartManual:end));
+% 
+% meanSubMan = nanmean(subsampManual(:,2));
+% stdSubMan = nanstd(subsampManual(:,2));
+% 
+% meanSubAuto = nanmean(subsampAuto(:,2));
+% stdSubAuto = nanstd(subsampAuto(:,2));
 
 %% theoretical PDFs
 
-x = meanSalinityAuto-(4*stdSalinityAuto):0.01:meanSalinityAuto+(4*stdSalinityAuto);
+x = meanSalinityAuto-(4*stdSalinityAuto):0.001:meanSalinityAuto+(4*stdSalinityAuto);
 
-% automated data pdf for a variety of distributions (given the mean & std)
-%pd1 = makedist('Normal', meanSalinityAuto, stdSalinityAuto);
+% using preset MATLAB distributions:
 
-%y = pdf(pd1,x);
-
-%y = normpdf(x,meanSalinityAuto,stdSalinityAuto);
-
-
+% gaussian preset
 gaussianY = pdf('Normal', x, meanSalinityAuto, stdSalinityAuto);
 
+% uniform preset
 % solved for upper and lower bounds in wolfram alpha using:
 % 1/12*(upper-lower)^2 = std^2
 % 0.5*(upper+lower) = mean
 pdUniform = makedist('Uniform','lower', 32.6138, 'upper', 34.058);
 uniformY = pdf(pdUniform,x);
 
-% solved for N and P in wolfram alpha using:
-% mean = N*P
-% variance = N*P(1-P)
-N = 34;
-P = 0.994781;
-pdBimodal = makedist('Binomial',N,P);
-bimodalY = pdf(pdBimodal,x);
-%bimodalY = pdf('Binomial', x, meanSalinityAuto, stdSalinityAuto);
+% fake datasets:
+
+% fake gaussian dataset
+gaussianDist = normrnd(meanSalinityAuto,stdSalinityAuto,[1,3337]);
+
+% creating fake uniform distribution dataset 
+% subtract 0.5 to center mean at 0
+uniformDist = rand(3337,1)-0.5; %+ meanSalinityAuto;1.41198*
+uniformDist = uniformDist*(stdSalinityAuto/std(uniformDist)); % scale the standard deviation
+uniformDist = uniformDist + (meanSalinityAuto - mean(uniformDist));
+
+% creating fake bimodal distribution dataset
+binomialDist = zeros(1,3337);
+for i = 1668:3337
+    binomialDist(i) = 10;
+end
+%scale matrix n
+binomialDist = binomialDist-5;
+binomialDist = binomialDist*(stdSalinityAuto/std(binomialDist)); % scale the standard deviation
+binomialDist = binomialDist + (meanSalinityAuto - mean(binomialDist)); %scale the mean
+%plot(x,n);
+
 
 figure
-subplot(3,1,1);
+subplot(5,1,1);
 plot(x,gaussianY);
-subplot(3,1,2);
+legend('MATLAB Gaussian PDF');
+xlabel('Salinity (psu)');
+ylabel('Probability');
+subplot(5,1,2);
 plot(x,uniformY);
-subplot(3,1,3);
-plot(x,bimodalY);
+legend('MATLAB Uniform PDF');
+xlabel('Salinity (psu)');
+ylabel('Probability');
+subplot(5,1,3);
+EDGES = 31.5:0.001:35;
+histogram(gaussianDist,EDGES,'Normalization','pdf');
+legend('Fake Data Gaussian PDF');
+xlabel('Salinity (psu)');
+ylabel('Probability');
+subplot(5,1,4)
+histogram(uniformDist,EDGES,'Normalization','pdf');
+legend('Fake Data Uniform PDF');
+xlabel('Salinity (psu)');
+ylabel('Probability');
+subplot(5,1,5)
+histogram(binomialDist, EDGES,'Normalization','pdf');
+legend('Fake Data Binomial PDF');
+xlabel('Salinity (psu)');
+ylabel('Probability');
+
+
 
 %% empirical probability density functions
 
@@ -191,19 +244,35 @@ subplot(2,1,1)
 histogram(salinityAuto,'Normalization','pdf');
 
 set(gca,'FontSize',16);
-title('Probability Density Function of SST for Automated Data');
-xlabel('Salinity in PSU','FontSize',16);
+title('Probability Density Function of Salinity for Automated Data');
+xlabel('Salinity (psu)','FontSize',16);
 ylabel('probability', 'FontSize',16);
 
 subplot(2,1,2)
-histogram(salinityDataManual,'Normalization','pdf');
+EDGES = 30:0.1:35;
+histogram(salinityDataManual,EDGES,'Normalization','pdf'); %indicate how many bins
 
 minManual = nanmin(salinityDataManual);
-maxManual = nanmax(salinityDataManual); %why is this 720??
+maxManual = nanmax(salinityDataManual); 
 
 set(gca,'FontSize',16);
-title('Probability Density Function of SST for Manual Data');
-xlim([29.64, 35]) % MATLAB wouldn't take variables here but they're the min and max of manual salinity values
-xlabel('Salinity in PSU','FontSize',16);
+title('Probability Density Function of Salinity for Manual Data');
+xlim([29.64, 34.8600]) % MATLAB wouldn't take variables here but they're the min and max of manual salinity values
+xlabel('Salinity (psu)','FontSize',16);
 ylabel('probability', 'FontSize',16);
 
+%% compare PDFs
+
+% calculate cdf
+% autoCDF = cdfplot(salinityAuto);
+% manuCDF = cdfplot(salinityDataManual);
+% 
+% h = kstest2(autoCDF,manuCDF);
+
+
+stderrorAuto = stdSalinityAuto/sqrt(length(salinityAuto)); % 3.7e-04
+stderrorManual = stdSalinityManual/sqrt(length(salinityDataManual)); %9.7e-4
+
+%% summary
+
+%value of manual data relative to continuous data?
