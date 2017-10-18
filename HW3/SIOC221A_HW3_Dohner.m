@@ -97,12 +97,12 @@ ylabel('dbar');
 % defining sine and cosine components of major tidal constituents
 
 % need the units of the period to be the same as the x axis time units
-O1_sin = sin(2*pi*time4/25.83); %O1: principal lunar diurnal
-O1_cos = cos(2*pi*time4/25.83); 
-K1_sin = sin(2*pi*time4/23.93); %K1: luni-solar diurnal
-K1_cos = cos(2*pi*time4/23.93);
-M2_sin = sin(2*pi*time4/12.42); %M2: principal lunar
-M2_cos = cos(2*pi*time4/12.42);
+O1_sin = sin(2*pi*time4/(25.83/24)); %O1: principal lunar diurnal
+O1_cos = cos(2*pi*time4/(25.83/24)); 
+K1_sin = sin(2*pi*time4/(23.93/24)); %K1: luni-solar diurnal
+K1_cos = cos(2*pi*time4/(23.93/24));
+M2_sin = sin(2*pi*time4/(12.42/24)); %M2: principal lunar
+M2_cos = cos(2*pi*time4/(12.42/24));
 
 % TODO: do I want the time4(:) in here? I took it out of second column of A
 % matrix. Got rid of the error when I removed it
