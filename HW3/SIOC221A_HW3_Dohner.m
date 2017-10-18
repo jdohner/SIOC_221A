@@ -57,7 +57,6 @@ ylabel('dbar');
 %% plotting just the first month of 2015
 
 % 2592000 seconds in 30 days
-firstTime = min(time);
 % If a measurement is taken every 361 seconds, then 30 days into the record
 % should be roughly the first 7180 measurements (2592000/361) in the 2015 
 % series. My record is 30 days long.
@@ -70,10 +69,6 @@ time4 = double(time3)/24/3600+date0; % divide the time by 24*3600 to convert sec
 figure('name','Scripps_Pier_Pressure_January_2015');
 plot(time4, pressure2,'LineWidth',1);
 % TODO: format x axis date ticks
-% label the x-axis in months
-%datetick('x','yyyy');
-%set(gca,'FontSize',16);
-%xlinspace = linspace(min(time4), max(time4), 5);
 title('Scripps Pier Pressure in Janury 2015');
 xlabel('Date');
 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto')
@@ -81,28 +76,17 @@ datetick('x','mm/dd/yy')
 ylabel('dbar');
 
 %% Least squares fit
-%TODO: are we only supposed to fit our one month of data for this? or
-%entire year?
-
-% % assuming time matches the SST standard with days counting from
-% % January 1, 1800
-% % and data is the monthly sea surface temperature
-% plot(time4,pressure2,'LineWidth',2); hold on
-% A=[ones(length(time),1) time(:)];
-% x=inv(A'*A)*A'*data;
-% plot(time+datenum(1800,1,1),A*x,'r','LineWidth',2)
-
-%time5 = double(time3)/24/3600+date0;
 
 % defining sine and cosine components of major tidal constituents
 
-% need the units of the period to be the same as the x axis time units
+% convert period to days (to match x axis time units)
 O1_sin = sin(2*pi*time4/(25.83/24)); %O1: principal lunar diurnal
 O1_cos = cos(2*pi*time4/(25.83/24)); 
 K1_sin = sin(2*pi*time4/(23.93/24)); %K1: luni-solar diurnal
 K1_cos = cos(2*pi*time4/(23.93/24));
 M2_sin = sin(2*pi*time4/(12.42/24)); %M2: principal lunar
 M2_cos = cos(2*pi*time4/(12.42/24));
+
 
 % TODO: do I want the time4(:) in here? I took it out of second column of A
 % matrix. Got rid of the error when I removed it
@@ -119,12 +103,91 @@ xlabel('Time');
 datetick('x','mm/dd/yy')
 ylabel('TODO');
 
-% LSF should basically match the data
-% whats the amplitude of the tide components? can calculate from sin & cos
-% mean ~3.5
-% tidal amplitudes will be 1-2
 
-%TODO: what is the mean and what are the total amplitudes of the three
-%tidal constituents? (Total amplitude should be determined from the square
-%root of the sum of the squares of the sine and cosine amplitudes)
+% The mean is 3.4898 (first row in x2 vector)
+% 
+% Total amplitude = square root of the sum of the squares of the sine and 
+% cosine amplitudes)
+% Units of mean and amplitude are decibars
+amplitude_O1_jan = sqrt((x2(2,1))^2 + (x2(3,1))^2);
+amplitude_K1_jan = sqrt((x2(4,1))^2 + (x2(5,1))^2);
+amplitude_M2_jan = sqrt((x2(6,1))^2 + (x2(7,1))^2);
+
+%% Stationarity of the tide
+
+% repeating the least squares fit for 30 days roughly near August 2015 
+
+% Starting 7/12 of the way through the time record (82237 measurements).
+% If a measurement is taken every 361 seconds, then 30 days into the record
+% should be roughly the next 7180 measurements (2592000/361). My record is 
+% 30 days long.
+kAugustStart = floor((7/12)*82237); 
+kAugustEnd = kAugustStart + 7180; 
+timeAugust = time(kAugustStart:kAugustEnd, 1);
+timeAugust = double(timeAugust)/24/3600+date0; % in units of days
+pressureAugust = pressure(kAugustStart:kAugustEnd, 1);
+
+% defining sine and cosine components of major tidal constituents
+
+% convert period to days (to match x axis time units)
+O1_sin_aug = sin(2*pi*timeAugust/(25.83/24)); %O1: principal lunar diurnal
+O1_cos_aug = cos(2*pi*timeAugust/(25.83/24)); 
+K1_sin_aug = sin(2*pi*timeAugust/(23.93/24)); %K1: luni-solar diurnal
+K1_cos_aug = cos(2*pi*timeAugust/(23.93/24));
+M2_sin_aug = sin(2*pi*timeAugust/(12.42/24)); %M2: principal lunar
+M2_cos_aug = cos(2*pi*timeAugust/(12.42/24));
+
+
+A3=[ones(length(timeAugust),1) O1_sin_aug O1_cos_aug K1_sin_aug K1_cos_aug M2_sin_aug M2_cos_aug];
+x3=inv(A3'*A3)*A3'*pressureAugust;
+figure('name','Pier_Pressure_Tidal_LSF_Summer');
+plot(timeAugust,A3*x3,'m','LineWidth',2)
+hold on
+plot(timeAugust, pressureAugust,'LineWidth',1);
+set(gca,'FontSize',16);
+title('Pier Pressure Least Squares Fit of 3 Major Tidal Constituents - Summer');
+xlabel('Time');
+datetick('x','mm/dd/yy')
+ylabel('TODO');
+
+% The mean is 3.4898 (first row in x2 vector)
+% 
+% Total amplitude = square root of the sum of the squares of the sine and 
+% cosine amplitudes)
+% Units of mean and amplitude are decibars
+amplitude_O1_aug = sqrt((x3(2,1))^2 + (x3(3,1))^2);
+amplitude_K1_aug = sqrt((x3(4,1))^2 + (x3(5,1))^2);
+amplitude_M2_aug = sqrt((x3(6,1))^2 + (x3(7,1))^2);
+
+% The tidal amplitudes for the K1 tide decreases by 0.07. The amplitude of 
+% M2 decreases by 0.01, and the amplitude of O1 does not change. The tidal 
+% component that changes the most is the K1 tide. Because the earth rotates 
+% on a tilted axis relative to our axis of rotation around the sun, the
+% distance of the pier from the sun changes on a seasonal scale, changing
+% the influence of solar forcing on local tides. The K1 tide is the only of
+% the three tides that contains a component reflecting the influence of the
+% sun on tides, thus it makes sense that K1 shows the biggest change in
+% amplitude between January and August.
+
+%% Chi squared and the misfit. (Good name for a short story)
+
+% y is vector containing pressure data (pressureAugust)
+% A is the matrix containing ones, sines and cosines (A3)
+% x is matrix containing mean and amplitudes (x3)
+% TODO: Question: is sigma the uncertainty for each point? Or sigma for the
+% whole data?
+sigma = std(pressureAugust);
+%sum = symsum((((pressureAugust - A3*x3).^2)/sigma.^2), 1, length(pressureAugust));
+
+chiSquared = 0; % initialized chiSquared variable before loop
+for k = 1:length(pressureAugust)
+    chiSquared = chiSquared + (pressureAugust(k) - (A3*x3)
+
+
+
+
+
+
+
+
 
