@@ -1,0 +1,53 @@
+% file SIOC 221A HW 3
+% 
+% author Julia Dohner
+%
+% due date October 19, 2017
+
+clear all; close all;
+
+numYears = 2017-2005 + 1;
+
+%% plotting the Scripps Pier pressure record
+
+% create empty arrays to hold time and temp data
+time = [];
+pressure = [];
+
+time = [time; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-2015.nc'),'time')];
+pressure = [pressure; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-2015.nc'),'pressure')];
+
+
+
+% remove bad data using the flagged data from .nc file
+% create empty arrays to hold time and temp data
+pressure_flagPrimary = [];
+
+
+
+pressure_flagPrimary = [pressure_flagPrimary; ncread(strcat('http://sccoos.org/thredds/dodsC/autoss/scripps_pier-', num2str(binomialDist), '.nc'),'pressure_flagPrimary')];
+
+
+%looping through to remove bad data from pressure record
+for i = 1:length(pressure)
+    if pressure_flagPrimary(i) ~= 1
+        pressure(i) = nan;
+    end
+end
+
+% plot the time series
+date0=datenum(1970,1,1); % give reference date (first date)
+time = double(time/24/3600+date0);
+figure('name','Scripps_Pier_Pressure_2005-2017');
+plot(time, pressure,'LineWidth',1);
+
+% label the x-axis in months
+datetick('x','yyyy');
+set(gca,'FontSize',16);
+title('Scripps Pier Pressure');
+xlabel('Date');
+datetick('x','mm/dd/yy','keeplimits')
+ylabel('dbar');
+
+
+
