@@ -31,21 +31,21 @@ end
 
 % examining the time increments between adjacent measurements
 X = diff(time);
-figure
-plot(X(1:4000))
+%figure
+%plot(X);
+%plot(X(1:4000))
 
 % plot the time series
 date0=datenum(1970,1,1); % give reference date (first date)
-time2 = double(time/24/3600+date0); % divide the time by 24*3600 to convert seconds into days since 1970
+time2 = double(time)/24/3600+date0; % divide the time by 24*3600 to convert seconds into days since 1970
 figure('name','Scripps_Pier_Pressure_2015');
 plot(time2, pressure,'LineWidth',1);
 
 % label the x-axis in months
-datetick('x','yyyy');
 set(gca,'FontSize',16);
 title('Scripps Pier Pressure');
 xlabel('Date');
-datetick('x','mm/dd/yy','keeplimits')
+datetick('x','mm/dd/yy')
 ylabel('dbar');
 
 
@@ -58,26 +58,73 @@ ylabel('dbar');
 
 % 2592000 seconds in 30 days
 firstTime = min(time);
-% if measurement is taken every 361 seconds, then 30 days into the record
+% If a measurement is taken every 361 seconds, then 30 days into the record
 % should be roughly the first 7180 measurements (2592000/361) in the 2015 
-% series 
+% series. My record is 30 days long.
 time3 = time(1:7180);
 pressure2 = pressure(1:7180);
 
 % plot the time series
 date0=datenum(1970,1,1); % give reference date (first date)
-time4 = double(time3/24/3600+date0); % divide the time by 24*3600 to convert seconds into days since 1970
+time4 = double(time3)/24/3600+date0; % divide the time by 24*3600 to convert seconds into days since 1970
 figure('name','Scripps_Pier_Pressure_January_2015');
-plot(time4, pressure2,'.');
-
+plot(time4, pressure2,'LineWidth',1);
+% TODO: format x axis date ticks
 % label the x-axis in months
-datetick('x','yyyy');
-set(gca,'FontSize',16);
+%datetick('x','yyyy');
+%set(gca,'FontSize',16);
+%xlinspace = linspace(min(time4), max(time4), 5);
 title('Scripps Pier Pressure in Janury 2015');
 xlabel('Date');
+set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto')
 datetick('x','mm/dd/yy')
 ylabel('dbar');
 
+%% Least squares fit
+%TODO: are we only supposed to fit our one month of data for this? or
+%entire year?
 
+% % assuming time matches the SST standard with days counting from
+% % January 1, 1800
+% % and data is the monthly sea surface temperature
+% plot(time4,pressure2,'LineWidth',2); hold on
+% A=[ones(length(time),1) time(:)];
+% x=inv(A'*A)*A'*data;
+% plot(time+datenum(1800,1,1),A*x,'r','LineWidth',2)
 
+%time5 = double(time3)/24/3600+date0;
+
+% defining sine and cosine components of major tidal constituents
+
+% need the units of the period to be the same as the x axis time units
+O1_sin = sin(2*pi*time4/25.83); %O1: principal lunar diurnal
+O1_cos = cos(2*pi*time4/25.83); 
+K1_sin = sin(2*pi*time4/23.93); %K1: luni-solar diurnal
+K1_cos = cos(2*pi*time4/23.93);
+M2_sin = sin(2*pi*time4/12.42); %M2: principal lunar
+M2_cos = cos(2*pi*time4/12.42);
+
+% TODO: do I want the time4(:) in here? I took it out of second column of A
+% matrix. Got rid of the error when I removed it
+
+A2=[ones(length(time4),1) O1_sin O1_cos K1_sin K1_cos M2_sin M2_cos];
+x2=inv(A2'*A2)*A2'*pressure2;
+figure('name','Pier_Pressure_Tidal_LSF');
+plot(time4,A2*x2,'m','LineWidth',2)
+hold on
+plot(time4, pressure2,'LineWidth',1);
+set(gca,'FontSize',16);
+title('Pier Pressure Least Squares Fit of 3 Major Tidal Constituents');
+xlabel('Time');
+datetick('x','mm/dd/yy')
+ylabel('TODO');
+
+% LSF should basically match the data
+% whats the amplitude of the tide components? can calculate from sin & cos
+% mean ~3.5
+% tidal amplitudes will be 1-2
+
+%TODO: what is the mean and what are the total amplitudes of the three
+%tidal constituents? (Total amplitude should be determined from the square
+%root of the sum of the squares of the sine and cosine amplitudes)
 
