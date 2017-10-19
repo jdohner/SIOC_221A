@@ -164,19 +164,20 @@ for i = 1:(length(pressureAugust)-1);
 end
 
 sigma = std(diffArray);
-% my first attempt at looping through to sum:
 
-%sum = symsum((((pressureAugust - A3*x3).^2)/sigma.^2), 1, length(pressureAugust));
 
 % initializing variable before loop
 chiSquared = 0; 
-for i = 1:length(pressureAugust)
-    for j = 1:length(x3)
-        chiSquared = chiSquared + ((pressureAugust(i) - A3(i,j)*x3(j)/sigma)^2);
-    end
-    
-end
 
+for i = 1:length(pressureAugust)
+    ax_prod = 0;
+    for j = 1:length(x3)
+        ax_prod = ax_prod + (A3(i,j)*x3(j));
+    end
+    chiSquared = chiSquared + ((pressureAugust(i) - ax_prod)^2);
+end
+chiSquared = chiSquared / (sigma^2); % sigma is out of for loop because is 
+% already a sum of uncertainties of individual points
 
 
 % How much does the misfit change if you fit with 5 frequencies instead of
@@ -196,27 +197,22 @@ x4=inv(A4'*A4)*A4'*pressureAugust;
 % recalculate misfit now with the 5-frequency fit (using A4 and x4)
 
 chiSquared_5 = 0; 
+
 for i = 1:length(pressureAugust)
+    ax_prod_5 = 0;
     for j = 1:length(x4)
-        chiSquared_5 = chiSquared_5 + ((pressureAugust(i) - A4(i,j)*x4(j)/sigma)^2);
+        ax_prod_5 = ax_prod_5 + (A4(i,j)*x4(j));
     end
-    
+    chiSquared_5 = chiSquared_5 + ((pressureAugust(i) - ax_prod_5)^2);
 end
+chiSquared_5 = chiSquared_5 / (sigma^2); % sigma is out of for loop because is 
+% already a sum of uncertainties of individual points
 
-% TODO: I'm expecting a reduced misfit when I fit 5 frequencies
+nu = length(pressureAugust)-length(x3); % number of DOF (N-M)
+nu_5 = length(pressureAugust)-length(x4); % number of DOF (N-M)
 
-% How could you decide if the reduced misfit was sufficient to justify
-% fitting additional frequencies?
+p = gammainc(chiSquared/2, nu/2);
+p_5 = gammainc(chiSquared_5/2, nu_5/2);
 
-% gammainc gives the probability that purely by chance we get a value
-% that's as good as we can find
-% if p is close to 1, the data is too good to be true
-% essentially asks if we're overfitting our data
-
-% nu = x4(1); % the mean
-% p = gammainc(chiSquared/2,nu/2)
-
-% TODO: what's the threshold of p that lets us decide if we can fit
-% additional frequencies?
-
-
+p_subtraction = gammainc(nu/2, nu/2);
+p_subtraction_5 = gammainc(nu_5/2, nu_5/2);
