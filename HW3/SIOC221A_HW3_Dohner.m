@@ -1,6 +1,7 @@
 % file SIOC 221A HW 3
 % 
-% author Julia Dohner, with help from Luke Kachelein and Dillon Amaya
+% author Julia Dohner, with help from Luke Kachelein, Dillon Amaya, and
+% Annie Adelson
 %
 % due date October 19, 2017
 
