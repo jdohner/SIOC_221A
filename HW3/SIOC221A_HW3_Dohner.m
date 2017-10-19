@@ -157,21 +157,27 @@ amplitude_M2_aug = sqrt((x3(6,1))^2 + (x3(7,1))^2);
 % A is the matrix containing ones, sines and cosines (A3)
 % x is matrix containing mean and amplitudes (x3)
 
-sigma = std(pressureAugust);
+% looping to create array of differences between two adjacent points
+diffArray = [];
+for i = 1:(length(pressureAugust)-1);
+    diffArray(i) = pressureAugust(i+1) - pressureAugust(i);
+end
+
+sigma = std(diffArray);
 % my first attempt at looping through to sum:
 
 %sum = symsum((((pressureAugust - A3*x3).^2)/sigma.^2), 1, length(pressureAugust));
 
-% initializing variables before loop
+% initializing variable before loop
 chiSquared = 0; 
-ax_prod = 0;
 for i = 1:length(pressureAugust)
     for j = 1:length(x3)
-        ax_prod = ax_prod + A3(i,j)*x3(j);
+        chiSquared = chiSquared + ((pressureAugust(i) - A3(i,j)*x3(j)/sigma)^2);
     end
-    chiSquared = chiSquared + ((pressureAugust(i) - ax_prod)^2);
+    
 end
-chiSquared = chiSquared/(sigma^2);
+
+
 
 % How much does the misfit change if you fit with 5 frequencies instead of
 % 3?
@@ -190,16 +196,14 @@ x4=inv(A4'*A4)*A4'*pressureAugust;
 % recalculate misfit now with the 5-frequency fit (using A4 and x4)
 
 chiSquared_5 = 0; 
-ax_prod_5 = 0;
 for i = 1:length(pressureAugust)
     for j = 1:length(x4)
-        ax_prod_5 = ax_prod_5 + A4(i,j)*x4(j);
+        chiSquared_5 = chiSquared_5 + ((pressureAugust(i) - A4(i,j)*x4(j)/sigma)^2);
     end
-    chiSquared_5 = chiSquared_5 + ((pressureAugust(i) - ax_prod_5)^2);
+    
 end
-chiSquared_5 = chiSquared_5/(sigma^2);
 
-
+% TODO: I'm expecting a reduced misfit when I fit 5 frequencies
 
 % How could you decide if the reduced misfit was sufficient to justify
 % fitting additional frequencies?
@@ -209,7 +213,8 @@ chiSquared_5 = chiSquared_5/(sigma^2);
 % if p is close to 1, the data is too good to be true
 % essentially asks if we're overfitting our data
 
-% p = gammainc(chi_squared/2,nu/2)
+% nu = x4(1); % the mean
+% p = gammainc(chiSquared/2,nu/2)
 
 % TODO: what's the threshold of p that lets us decide if we can fit
 % additional frequencies?
