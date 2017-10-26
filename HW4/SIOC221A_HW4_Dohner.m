@@ -1,18 +1,11 @@
 % file SIOC 221A HW 4
 % 
-% author Julia Dohner
+% author Julia Dohner, with help from Annie Adelson, Jacob Morgan and Luke
+% Kachelein
 %
 % due date October 26, 2017
 
 clear all; close all;
-
-% TODO: 
-% half the pressure vector from the beginning rather than only plotting first half
-% 1. get third peak
-% 2. Having trouble with getting amplitudes via indexing - why do my peaks b and d have different amplitudes but the
-% same index?
-% 3. other way to see if spectral peaks align with LSF?
-
 
 
 %% gathering 2015 Pier pressure record
@@ -37,66 +30,58 @@ for i = 1:length(pressure)
 end
 
 
-%% Pier pressure record for a summer month of 2015
 
-% 30 days roughly near August 2015 
+%% consider a period with equal increments
 
-% Starting 7/12 of the way through the time record (82237 measurements).
-% If a measurement is taken every 361 seconds, then 30 days into the record
-% should be roughly the next 7180 measurements (2592000/361). My record is 
-% 30 days long.
+% this for the first 34 days of the 2015 record
+
+% time differences
+time = double(time); 
+t_diff = diff(time);
+
+% finding segment of data with even spacing
+cutoff = find(t_diff(1:82236)>t_diff(1),1);
+pressure_sub = pressure(1:cutoff-1); % subsampled pressure
+time_sub = time(1:cutoff-1); % subsampled times
 date0=datenum(1970,1,1); % give reference date (first date)
-kAugustStart = floor((7/12)*82237); 
-kAugustEnd = kAugustStart + 7180; 
-timeAugust = time(kAugustStart:kAugustEnd, 1);
-timeAugust = double(timeAugust)/86400+date0; % in units of days (conversion: seconds/day)
-%timeAugustHours = double(timeAugust)/3600 + date0;
-pressureAugust = pressure(kAugustStart:kAugustEnd, 1);
-% 7181 points in record at 361 second intervals 
-% total duration is 7181*361/(24*3600) days
+time_sub = double(time_sub)/86400+date0; % in units of days (conversion: seconds/day)
 
+figure 
+hold on
+
+plot(time_sub, pressure_sub, 'LineWidth',1)
+
+ax = gca;
+xlabel('\fontsize{12}2015')
+ylabel('\fontsize{12}Pressure (dbar)')
+title('\fontsize{14}2015 Scripps Pier Pressure')
+datetick('x','mmm dd','keepticks')
 
 %% Fourier transforming my data
 
 
-f = fft(pressureAugust); % Fourier transform of my data
-data = f(1:3590);
-N = length(pressureAugust);
+f = fft(pressure_sub); % Fourier transform of my data
+data = f(1:3590); % only using first half of vector
+N = length(pressure_sub);
 frequency = (0:7180)/(7181*361)*(24*3600); 
 frequency = frequency(1:3590)'; % only using first half of vector
 data = data/N; % Normalizing the data
-
 
 figure
 semilogy(frequency,abs(real(data)),'-b')
 hold on
 semilogy(frequency,abs(imag(data)),'-m');
-title('Real and imaginary parts of Fourier transform of Scripps Pier pressure in August 2015');
-xlabel('cycles per day (cpd)');
-ylabel('dbar');
-%xlim([0 125]);
+title('\fontsize{14}Real and imaginary parts of Fourier transform of 2015 Scripps Pier pressure');
+legend('\fontsize{12}real parts','imaginary parts');
+xlabel('\fontsize{12}cycles per day (cpd)');
+ylabel('\fontsize{12}Pressure (dbar)');
 
 figure
 semilogy(frequency,abs(data),'-b')
-title('Fourier transform of Scripps Pier pressure in August 2015');
-xlabel('cycles per day (cpd)');
-ylabel('dbar');
+title('\fontsize{14}Fourier transform of 2015 Scripps Pier pressure');
+xlabel('C\fontsize{12}ycles per day (cpd)');
+ylabel('\fontsize{12}Pressure (dbar)');
 xlim([0 125]);
-
-% question: how to resolve the third peak??
-
-% peaks I can find are at 1 cpd and 2 cpd
-% what frequencies correspond to these peaks? - 1 cpd, 2 cpd
-% Yes, they're what I'd expect based on the known tidal frequencies, which
-% are ~1 cpd for the O1 and K1 tides, and ~2 cpd for the principal lunar
-% tide.
-
-% period = 24/cpd or something to get cpd into hour unit period
-% find exact cpd value
-
-% sampling frequency = 1/timestep
-
-
 
 %% mean pressure and amplitudes of major peaks
 % using Fourier coefficients to find mean pressure, amplitudes of peaks
@@ -106,27 +91,35 @@ meanPressure = data(1);
 
 absData = abs(data);
 
+% sorting peaks into descending order
 [amp ind] = sort(absData,'descend');
-amplitudes(:,2) = amp(1:4);
-amplitudes(:,1) = ind(1:4); % stores the indices (col 1) and amplitudes (col 2) of major peaks
+amplitudes(:,2) = amp(1:5);
+amplitudes(:,1) = ind(1:5); % stores the indices (col 1) and amplitudes (col 2) of major peaks
 
-% multiple amplitudes by 2 to account for both positive and negative
+% multiply amplitudes by 2 to account for both positive and negative
 % frequencies
 amplitude_a = 2*amplitudes(1,2); % this is the mean
 amplitude_b = 2*amplitudes(2,2); % largest non-mean peak
 amplitude_c = 2*amplitudes(3,2); % second-largest non-mean peak
 amplitude_d = 2*amplitudes(4,2); % third-largest non-mean peak
 
-% TODO: my aplitudes seem to be too small.... Nah they're probably OK
-% there's something funky going on here with the data prep. peaks not being
-% resolved, amplitudes are off
-% time increments constant?
+% indices of peaks
+index_cpd_a = amplitudes(1,1);
+index_cpd_b = amplitudes(2,1);
+index_cpd_c = amplitudes(3,1);
+index_cpd_d = amplitudes(4,1);
 
+% frequencies of peaks
+cpd_a = frequency(index_cpd_a);
+cpd_b = frequency(index_cpd_b);
+cpd_c = frequency(index_cpd_c);
+cpd_d = frequency(index_cpd_d);
 
-%% Spectral peaks vs. least-squares fit?
-
-% They align in terms of their frequency and amplitude. Otherwise I'm not
-% sure what I could do to further compare them.
+% periods of peaks
+%cpd_a_period = 24/cpd_a;
+cpd_b_period = 24/cpd_b;
+cpd_c_period = 24/cpd_c;
+cpd_d_period = 24/cpd_d;
 
 
 %% spectral energy vs. frequency
@@ -135,39 +128,20 @@ spectralE = abs(data).^2;
 
 figure
 semilogy(frequency,spectralE,'-b')
-title('Spectral Energy of Scripps Pier pressure in August 2015');
-xlabel('cycles per day (cpd)');
-ylabel('dbar^2 / cpd');
-xlim([0 125]);
+title('\fontsize{14}Spectral Energy of Scripps Pier pressure in August 2015');
+xlabel('\fontsize{12}Cycles per day (cpd)');
+ylabel('\fontsize{12}dbar^2 / cpd');
 
-% Question: doesn't look much different from my FT plot
-
-% the spectrum is red (peaks at low frequencies)
-
-% differentiating time series in time before FT
-% time needs to be a positive integer - how to do this? convert back to
-% seconds?
-
-timeAugust_diff = time(kAugustStart:kAugustEnd, 1);
-timeAugust_diff = double(timeAugust)+date0; % in units of seconds % ROOM FOR BUG HERE
-
-% getting error
-% Error using diff
-% Difference order N must be a positive integer scalar.
-diff_august = diff(pressureAugust);
-f_diff = fft(diff_august); % Fourier transform of my data
+% taking derivative of my data
+diff_data = diff(pressure_sub);
+f_diff = fft(diff_data); % Fourier transform of my data
 data_diff = f_diff(1:3590);
 data_diff = data_diff/N; % Normalizing the data
 
 spectralE_diff = abs(data_diff).^2;
 
-% TODO: unsure of axis labels for the first derivative
-% time differentiated FT is same as multiplying by frequency (therefore
-% increases)
-
 figure
 semilogy(frequency,spectralE_diff,'-b')
-title('Spectral Energy of time derivative of Scripps Pier pressure in August 2015');
-xlabel('cycles per day (cpd)');
-ylabel('(dbar/time)^2 / cpd');
-xlim([0 125]);
+title('\fontsize{14}Spectral Energy of time derivative of 2015 Scripps Pier pressure');
+xlabel('\fontsize{12}Cycles per day (cpd)');
+ylabel('\fontsize{12}(dbar/time)^2 / cpd');
