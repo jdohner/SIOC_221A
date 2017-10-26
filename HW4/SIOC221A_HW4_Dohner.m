@@ -91,6 +91,9 @@ xlim([0 125]);
 % are ~1 cpd for the O1 and K1 tides, and ~2 cpd for the principal lunar
 % tide.
 
+% period = 24/cpd or something to get cpd into hour unit period
+% find exact cpd value
+
 % sampling frequency = 1/timestep
 
 
@@ -114,7 +117,10 @@ amplitude_b = 2*amplitudes(2,2); % largest non-mean peak
 amplitude_c = 2*amplitudes(3,2); % second-largest non-mean peak
 amplitude_d = 2*amplitudes(4,2); % third-largest non-mean peak
 
-% TODO: my aplitudes seem to be too small....
+% TODO: my aplitudes seem to be too small.... Nah they're probably OK
+% there's something funky going on here with the data prep. peaks not being
+% resolved, amplitudes are off
+% time increments constant?
 
 
 %% Spectral peaks vs. least-squares fit?
@@ -156,6 +162,8 @@ data_diff = data_diff/N; % Normalizing the data
 spectralE_diff = abs(data_diff).^2;
 
 % TODO: unsure of axis labels for the first derivative
+% time differentiated FT is same as multiplying by frequency (therefore
+% increases)
 
 figure
 semilogy(frequency,spectralE_diff,'-b')
