@@ -22,7 +22,7 @@ end
 % breaking the data up into segments
 
 % reshaping data vector into 500x20 matrix
-a_reshape = reshape(a,[500,20]);
+a_reshape = reshape(a,[500,20]); % suggestion for getting red, white spectra
 b_reshape = reshape(b,[500,20]);
 %a_test = a_reshape(:,1);
 
@@ -60,8 +60,18 @@ end
 % summing over all spectra (taken from lecture 7 notes- seems weird)
 
 % turning into row vectors to plot
-amp_a = amp_a(:);
-amp_b = amp_b(:);
+% amp_a = amp_a(:);
+% amp_b = amp_b(:);
+
+% meeting notes: take mean across rows
+mean_amp_a = mean(amp_a,2)/(N/2); % 2 is taking mean across second dimension (each row)
+% default is dim 1, which is each column
+% 250 freqs, 20 datasets
+% can think of 20 thermistors on pier, ft each time series, average
+% together to get typical spectrum for whole record
+mean_amp_b = mean(amp_b,2)/(N/2); % multiplying by 2 bc taking half frequencies, divide by N to normalize
+% technically don't do to freq 0, but won't be looking at freq 0
+
 
 % Question: how to create frequency vector?
 
@@ -69,7 +79,17 @@ amp_b = amp_b(:);
 % what is happening here is that each spectrum is individually calculated-
 % they all look red. Then when they get plotted together like this they're
 % just stuck next to each other, which makes it look like it's oscillating
-semilogy(1:5020,amp_a, '-m', 1:5020, amp_b,'-b')
+%semilogy(1:5020,amp_a, '-m', 1:5020, amp_b,'-b')
+semilogy(0:250,mean_amp_a, 0:250, mean_amp_b, '-b');
 title('\fontsize{14}Spectra for white noise, autoregressive data');
-xlabel('\fontsize{12}frequency');
-ylabel('\fontsize{12}(units)^2 / frequency');
+xlabel('\fontsize{12}frequency'); % freq is arbitrary, technically cycles per length of data
+ylabel('\fontsize{12}(units)^2 / frequency'); % y is arbitrary energy, raw data squared, divide by freq
+
+% seems liek there's a lot of noise, go on to next section, look at error
+% bars, see if wiggles are consistent with error bars, if not, look at code
+%could also make dataset larger (200 instead of 20)
+
+% summing: want energy in each segment (lect 7 notes)
+% mean: want typical energy
+% need to divide by length of segment to get the energy to work out
+% (normalize appropriately)
