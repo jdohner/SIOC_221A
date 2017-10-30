@@ -43,6 +43,9 @@ mean_amp_a = mean(amp_a,2);
 mean_amp_b = mean(amp_b,2);
 figure
 semilogy(frequency,mean_amp_a, '-r', frequency, mean_amp_b, '-b')
+xlabel('\fontsize{12}2015')
+ylabel('\fontsize{12}Pressure (dbar)')
+title('\fontsize{14}2015 Scripps Pier Pressure')
 
 % %% Compute two spectra - my initial attempt
 % 
@@ -103,3 +106,33 @@ semilogy(frequency,mean_amp_a, '-r', frequency, mean_amp_b, '-b')
 % mean: want typical energy
 % need to divide by length of segment to get the energy to work out
 % (normalize appropriately)
+
+%% add error bars to your spectra
+
+nu = 2*floor(N/p);
+err_low = nu/chi2inv(0.05/2,nu);
+err_high = nu/chi2inv(1-0.05/2,nu);
+
+figure
+% semilogy(frequency,mean_amp_a, '-r', frequency, mean_amp_b, '-b')
+semilogy(0:p/2, mean_amp_a, '-b', [p/4 p/4],[err_low err_high]*mean_amp_a(p/4), '-r')
+xlabel('\fontsize{12}2015')
+ylabel('\fontsize{12}Pressure (dbar)')
+title('\fontsize{14}2015 Scripps Pier Pressure')
+
+% 0:M/2 is 10x1
+% mean_amp_a, mean_amp_b are 251x1
+% [M/4 M/4] is [5,5] (1x2)
+
+% really confusing in end of lecture 7 notes because the definitions of M
+% and p get switched
+% last term is [1.4192, 1.1909] (1x2)
+
+% seems to be ok, only plotting error bar halfway through our half
+% spectrum?
+figure
+semilogy(0:p/2, mean_amp_b, '-b', [p/4 p/4],[err_low err_high]*mean_amp_b(p/4), '-r')
+xlabel('\fontsize{12}2015')
+ylabel('\fontsize{12}Pressure (dbar)')
+title('\fontsize{14}2015 Scripps Pier Pressure')
+
