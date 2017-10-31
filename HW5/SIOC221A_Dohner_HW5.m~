@@ -140,12 +140,12 @@ title('\fontsize{14}2015 Scripps Pier Pressure')
 
 % matrix contains 200 500x20 matrices
 for i=0:200
-  bigMatrix{i+1} = rand(500,20);
-  bigMatrix{i+1} = fft(bigMatrix{i+1}); % compute fft of each matrix
-  %bigMatrix{i+1} = abs(bigMatrix
-  % Question: need help operating on inner matrices here
+  fft_matrix{i+1} = rand(500,20);
+  fft_matrix{i+1} = fft(matrix{i+1}); % compute fft of each matrix
   
-  %amp_matrix = abs(f_a(1:p/2+1,:)).^2; % aplitude of a = abs(f_t(from 1 to 500/2+1, all columns)^2
-  %amp_a(2:p/2,:) = 2*amp_a(2:p/2,:)/p; % normalizing values in amp_a (except for 0)
+  
+  
+  amp_matrix = abs(f_a(1:p/2+1,:)).^2; % aplitude of a = abs(f_t(from 1 to 500/2+1, all columns)^2
+  amp_a(2:p/2,:) = 2*amp_a(2:p/2,:)/p; % normalizing values in amp_a (except for 0)
 
 end
