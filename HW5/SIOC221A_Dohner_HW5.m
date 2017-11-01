@@ -25,24 +25,24 @@ end
 
 a_reshape = reshape(a,N/M,M);
 b_reshape = reshape(b,N/M,M);
-f_a = fft(a_reshape);
-f_b = fft(b_reshape);
+a_f = fft(a_reshape);
+b_f = fft(b_reshape);
 % for i = 1:floor(N/M);
 %     amp_a(:,i) = abs(f_a(1:(N/2+1))).^2; % for even N
 %     amp_b(:,i) = abs(f_b(1:(N/2+1))).^2; % for even N
 % end
 
-amp_a = abs(f_a(1:p/2+1,:)).^2; % aplitude of a = abs(f_t(from 1 to 500/2+1, all columns)^2
-amp_a(2:p/2,:) = 2*amp_a(2:p/2,:)/p; % normalizing values in amp_a (except for 0)
+a_amp = abs(a_f(1:p/2+1,:)).^2; % aplitude of a = abs(f_t(from 1 to 500/2+1, all columns)^2
+a_amp(2:p/2,:) = 2*a_amp(2:p/2,:)/p; % normalizing values in amp_a (except for 0)
 % 
-amp_b=abs(f_b(1:p/2+1,:)).^2; 
-amp_b(2:p/2,:)=2*amp_b(2:p/2,:)/p;
+b_amp=abs(b_f(1:p/2+1,:)).^2; 
+b_amp(2:p/2,:)=2*b_amp(2:p/2,:)/p;
 
 frequency=(0:p/2)/p; % for N even
-mean_amp_a = mean(amp_a,2);
-mean_amp_b = mean(amp_b,2);
+a_amp_mean = mean(a_amp,2);
+b_amp_mean = mean(b_amp,2);
 figure
-semilogy(frequency,mean_amp_a, '-r', frequency, mean_amp_b, '-b')
+semilogy(frequency,a_amp_mean, '-r', frequency, b_amp_mean, '-b')
 xlabel('\fontsize{14}frequency')
 ylabel('\fontsize{14}Pressure (dbar)')
 title('\fontsize{16}2015 Scripps Pier Pressure')
@@ -115,7 +115,7 @@ err_high = nu/chi2inv(1-0.05/2,nu);
 
 figure
 % semilogy(frequency,mean_amp_a, '-r', frequency, mean_amp_b, '-b')
-semilogy(0:p/2, mean_amp_a, '-b', [p/4 p/4],[err_low err_high]*mean_amp_a(p/4), '-r')
+semilogy(0:p/2, a_amp_mean, '-b', [p/4 p/4],[err_low err_high]*a_amp_mean(p/4), '-r')
 xlabel('\fontsize{12}2015')
 ylabel('\fontsize{12}Pressure (dbar)')
 title('\fontsize{14}2015 Scripps Pier Pressure')
@@ -131,21 +131,28 @@ title('\fontsize{14}2015 Scripps Pier Pressure')
 % seems to be ok, only plotting error bar halfway through our half
 % spectrum?
 figure
-semilogy(0:p/2, mean_amp_b, '-b', [p/4 p/4],[err_low err_high]*mean_amp_b(p/4), '-r')
+semilogy(0:p/2, b_amp_mean, '-b', [p/4 p/4],[err_low err_high]*b_amp_mean(p/4), '-r')
 xlabel('\fontsize{12}2015')
 ylabel('\fontsize{12}Pressure (dbar)')
 title('\fontsize{14}2015 Scripps Pier Pressure')
 
 %% monte carlo simulation
 
-% bigCellArray is a cell array{} containing 200 500x20 matrices
-% to access each of the 200 matrices in bigCellArray, can just use indexing
-for i=0:200
-    % the curly braces are referring to each of the matrices within
-    % bigMatrix
-  bigCellArray{i+1} = rand(500,20);
-  bigCellArray{i+1} = fft(bigCellArray{i+1}); % compute fft of each matrix
-  bigCellArray{i+1}(1:p/2+1,:) = bigCellArray{i+1}(1:p/2+1,:).^2; % aplitude of a = abs(f_t(from 1 to 500/2+1, all columns)^2
-  bigCellArray{i+1}(2:p/2,:) = 2*bigCellArray{i+1}(2:p/2,:)/p; % normalizing values in amp_a (except for 0)
 
+% bigMatrix is a matrix (500x4,000) containing 200 500x20 matrices
+bigMatrix = randn(500,4000);
+bigMatrix = fft(bigMatrix); % compute fft of each matrix
+bigMatrix_amp=abs(bigMatrix(1:p/2+1,:)).^2; 
+bigMatrix_amp(2:p/2,:)=2*bigMatrix_amp(2:p/2,:)/p;
+for i=1:20:4000
+    for j = i:i+20;
+        bigMatrix_mean_amp(:,floor(i/20)+1) = mean(bigMatrix_amp,2);
+    end
 end
+
+%turn mean amplitude result into a column vector
+bigMatrix_pdf = bigMatrix_mean_amp(:);
+% this didn't work
+%bigMatrix_pdf = ksdensity(bigMatrix_pdf);
+
+
