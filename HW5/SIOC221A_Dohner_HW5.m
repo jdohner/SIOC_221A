@@ -138,14 +138,14 @@ title('\fontsize{14}2015 Scripps Pier Pressure')
 
 %% monte carlo simulation
 
-% matrix contains 200 500x20 matrices
+% bigCellArray is a cell array{} containing 200 500x20 matrices
+% to access each of the 200 matrices in bigCellArray, can just use indexing
 for i=0:200
-  bigMatrix{i+1} = rand(500,20);
-  bigMatrix{i+1} = fft(bigMatrix{i+1}); % compute fft of each matrix
-  %bigMatrix{i+1} = abs(bigMatrix
-  % Question: need help operating on inner matrices here
-  
-  %amp_matrix = abs(f_a(1:p/2+1,:)).^2; % aplitude of a = abs(f_t(from 1 to 500/2+1, all columns)^2
-  %amp_a(2:p/2,:) = 2*amp_a(2:p/2,:)/p; % normalizing values in amp_a (except for 0)
+    % the curly braces are referring to each of the matrices within
+    % bigMatrix
+  bigCellArray{i+1} = rand(500,20);
+  bigCellArray{i+1} = fft(bigCellArray{i+1}); % compute fft of each matrix
+  bigCellArray{i+1}(1:p/2+1,:) = bigCellArray{i+1}(1:p/2+1,:).^2; % aplitude of a = abs(f_t(from 1 to 500/2+1, all columns)^2
+  bigCellArray{i+1}(2:p/2,:) = 2*bigCellArray{i+1}(2:p/2,:)/p; % normalizing values in amp_a (except for 0)
 
 end
