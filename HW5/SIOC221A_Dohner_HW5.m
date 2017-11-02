@@ -27,10 +27,6 @@ a_reshape = reshape(a,N/M,M);
 b_reshape = reshape(b,N/M,M);
 a_f = fft(a_reshape);
 b_f = fft(b_reshape);
-% for i = 1:floor(N/M);
-%     amp_a(:,i) = abs(f_a(1:(N/2+1))).^2; % for even N
-%     amp_b(:,i) = abs(f_b(1:(N/2+1))).^2; % for even N
-% end
 
 a_amp = abs(a_f(1:p/2+1,:)).^2; % aplitude of a = abs(f_t(from 1 to 500/2+1, all columns)^2
 a_amp(2:p/2,:) = 2*a_amp(2:p/2,:)/p; % normalizing values in amp_a (except for 0)
@@ -41,77 +37,20 @@ b_amp(2:p/2,:)=2*b_amp(2:p/2,:)/p;
 frequency=(0:p/2)/p; % for N even
 a_amp_mean = mean(a_amp,2);
 b_amp_mean = mean(b_amp,2);
+
 figure
 semilogy(frequency,a_amp_mean, '-r', frequency, b_amp_mean, '-b')
 xlabel('\fontsize{14}frequency')
 ylabel('\fontsize{14}Pressure (dbar)')
 title('\fontsize{16}2015 Scripps Pier Pressure')
 
-% %% Compute two spectra - my initial attempt
-% 
-% % generating 10,000 element dataset with Gaussian white noise
-% a=randn(10000,1);
-% b(1) = a(1);
-% % generating a second dataset using autoregressive process
-% for i=2:length(a)
-%     b(i)=.5*b(i-1)+a(i);
-% end
-% 
-% % compute two spectra for white noise and autorecessive datasets by
-% % breaking the data up into segments
-% 
-% % reshaping data vector into 500x20 matrix
-% a_reshape = reshape(a,[500,20]); % suggestion for getting red, white spectra
-% b_reshape = reshape(b,[500,20]);
-% 
-% f_a = fft(a_reshape);
-% f_b = fft(b_reshape);
-% 
-% % plotting spectra of a and b
-% N = 500; % length of each chunk of data
-% 
-% % pre-allocating for speed
-% amp_a = zeros(251,20);
-% amp_b = zeros(251,20);
-% for i = 1:20
-%     amp_a(:,i) = abs(f_a(1:N/2+1)).^2; % for even N
-%     amp_b(:,i) = abs(f_b(1:N/2+1)).^2; % for even N
-% end
-% 
-% % take mean across rows
-% mean_amp_a = mean(amp_a,2)/(N/2); 
-% mean_amp_b = mean(amp_b,2)/(N/2); 
-% % multiplying by 2 bc taking half frequencies, divide by N to normalize
-% % technically don't do to freq 0, but won't be looking at freq 0
-% 
-% figure
-% semilogy(0:250,mean_amp_a, 0:250, mean_amp_b, '-b');
-% title('\fontsize{14}Spectra for white noise, autoregressive data');
-% xlabel('\fontsize{12}frequency'); % freq is arbitrary, technically cycles per length of data
-% ylabel('\fontsize{12}(units)^2 / frequency'); % y is arbitrary energy, raw data squared, divide by freq
-
-% Helpful meeting notes:
-%
-% 2 in mean(x,2) is taking mean across second dimension (each row)
-% default is dim 1, which is each column
-% 250 freqs, 20 datasets
-% can think of 20 thermistors on pier, ft each time series, average
-% together to get typical spectrum for whole record
-
-% seems like there's a lot of noise, go on to next section, look at error
-% bars, see if wiggles are consistent with error bars, if not, look at code
-%could also make dataset larger (200 instead of 20)
-
-% summing: want energy in each segment (lect 7 notes)
-% mean: want typical energy
-% need to divide by length of segment to get the energy to work out
-% (normalize appropriately)
 
 %% add error bars to your spectra
 
 nu = 2*floor(N/p);
-err_low = nu/chi2inv(0.05/2,nu);
-err_high = nu/chi2inv(1-0.05/2,nu);
+err_high = nu/chi2inv(0.05/2,nu);
+err_low = nu/chi2inv(1-0.05/2,nu);
+ratio_chi2 = err_high/err_low;
 
 figure
 % semilogy(frequency,mean_amp_a, '-r', frequency, mean_amp_b, '-b')
@@ -138,21 +77,54 @@ title('\fontsize{14}2015 Scripps Pier Pressure')
 
 %% monte carlo simulation
 
-
 % bigMatrix is a matrix (500x4,000) containing 200 500x20 matrices
 bigMatrix = randn(500,4000);
 bigMatrix = fft(bigMatrix); % compute fft of each matrix
-bigMatrix_amp=abs(bigMatrix(1:p/2+1,:)).^2; 
-bigMatrix_amp(2:p/2,:)=2*bigMatrix_amp(2:p/2,:)/p;
-for i=1:20:4000
-    for j = i:i+20;
-        bigMatrix_mean_amp(:,floor(i/20)+1) = mean(bigMatrix_amp,2);
-    end
+
+bigMatrix_amp=(abs(bigMatrix(1:p/2+1,:)).^2)/p; %needed to move the /p to this line from line below
+bigMatrix_amp(2:p/2,:)=2*bigMatrix_amp(2:p/2,:);
+bigMatrix_amp = bigMatrix_amp(2:251,:); % dumping the mean
+
+
+for i=1:20:4000 %4000-19
+    bigMatrix_mean_amp(:,floor(i/20)+1) = mean(bigMatrix_amp(:,i:i+19),2);
 end
 
 %turn mean amplitude result into a column vector
 bigMatrix_pdf = bigMatrix_mean_amp(:);
-% this didn't work
-%bigMatrix_pdf = ksdensity(bigMatrix_pdf);
+bigMatrix_pdf = sort(bigMatrix_pdf,'descend'); 
+err_low_data = prctile(bigMatrix_pdf,0.025);
+err_high_data = prctile(bigMatrix_pdf,0.975);
+ratio_monteCarlo = err_high_data/err_low_data;
+
+bigMatrix_pdf_hist = histogram(bigMatrix_pdf); %histogram just a way of visualizing, just need info from raw values (have it once sorted)
 
 
+%% repeat above steps, but using a Hanning window
+% hanning: one dimensional, multiply by ones to make 2d
+% should get roughly the same ratio when do hanning window
+
+%so you multiply the hanning window before you fft the data. 
+%so if you fft(X) and X has size NxM then you would fft(Y) where 
+%Y = hanning(N)*(ones(1,M)).*X
+
+% Hanning window treatment of bigMatrix in Question #4
+bigMatrix_4 = randn(500,4000);
+dataHan = fft(detrend(bigMatrix_4).*(hann(500)*ones(1,4000)));
+
+dataHan_amp=(abs(dataHan(1:p/2+1,:)).^2)/p; %needed to move the /p to this line from line below
+dataHan_amp(2:p/2,:)=2*dataHan_amp(2:p/2,:);
+dataHan_amp = dataHan_amp(2:251,:); % dumping the mean
+
+for i=1:20:4000 %4000-19
+    dataHan_mean_amp(:,floor(i/20)+1) = mean(dataHan_amp(:,i:i+19),2);
+end
+
+%turn mean amplitude result into a column vector
+dataHan_pdf = dataHan_mean_amp(:);
+dataHan_pdf = sort(dataHan_pdf,'descend'); 
+err_low_data = prctile(dataHan_pdf,0.025);
+err_high_data = prctile(dataHan_pdf,0.975);
+ratio_Hann = err_high_data/err_low_data;
+
+dataHan_pdf_hist = histogram(dataHan_pdf); 
