@@ -33,6 +33,10 @@ a_amp(2:p/2,:) = 2*a_amp(2:p/2,:)/p; % normalizing values in amp_a (except for 0
 % 
 b_amp=abs(b_f(1:p/2+1,:)).^2; 
 b_amp(2:p/2,:)=2*b_amp(2:p/2,:)/p;
+a_amp = a_amp(2:251,:); % dumping the mean
+a_amp = a_amp(1:249,:); % dumping last value
+b_amp = b_amp(2:251,:); % dumping the mean
+b_amp = b_amp(1:249,:); % dumping last value
 
 frequency=(0:p/2)/p; % for N even
 a_amp_mean = mean(a_amp,2);
@@ -41,8 +45,9 @@ b_amp_mean = mean(b_amp,2);
 figure
 semilogy(frequency,a_amp_mean, '-r', frequency, b_amp_mean, '-b')
 xlabel('\fontsize{14}frequency')
-ylabel('\fontsize{14}Pressure (dbar)')
-title('\fontsize{16}2015 Scripps Pier Pressure')
+ylabel('\fontsize{14}units')
+title('\fontsize{16}Fourier Transform of Gaussian White Noise and Autoregressive Datasets')
+legend('\fontsize{12}Gaussian white noise','Autoregressive data');
 
 
 %% add error bars to your spectra
