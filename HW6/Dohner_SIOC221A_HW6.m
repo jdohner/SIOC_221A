@@ -1,0 +1,101 @@
+% file SIOC 221A HW 6
+% 
+% author Julia Dohner
+%
+% due date November 9, 2017
+
+%clear all; close all;
+
+%% Evaluate whether using a 50% overlap modifies the degrees of freedom
+
+% the issue I'm having is separating the windowing step (which in this case
+% is multiplying by a hanning window) from the overlap step. I believe I
+% first multiply by the window, then:
+% Since the window attenuates teh impact of the edge of each segment, you
+% can use segments that overlap (typically by 50%). This will give you
+% (almost) twice as many segments, so instead of nu degrees of freedom, some larger
+% number.
+% TODO: figure out how to implement the overlapping data
+
+N = 10000; % length of each chunk of data
+M = 20; % number of segments splitting data into
+p = N/M; % datapoints per segment
+
+%%%%%% Sarah's version %%%%%%
+
+longVector = randn(N*M,1);
+longVector_1 = reshape(longVector,N,M);
+longVector_2 = longVector(N/2+1:length(longVector)-N/2,:);
+longVector_2 = reshape(longVector_2,N,M-1);
+longVector_3 = [longVector_1 longVector_2];
+% do this 200 times for Monte Carlo
+% analyze spectra computed from this matrix
+
+%%%%%% my version %%%%%%
+
+% create long column vector to be reshaped
+longColumn = randn(N*200,1);
+% creating first vector of segmented data (200 matrices of dims 500x20)
+bigMatrix_1 = reshape(longColumn,p,200*M); 
+% creating 50% offset matrix (room for bug on line below)
+% removing first N/2 points and the last N/2 points
+bigMatrix_2 = longColumn((N/2+1):length(longColumn),:); % taking values 250 onward from OG
+first250 = longColumn(1:250,:);
+bigMatrix_2 = [bigMatrix_2 ; first250]; % add on first 250 values of OG to the end of offset
+
+% detrend, demean, and multiply by ones
+% room for bug in ones dimensions
+bigMatrix_1 = detrend(bigMatrix_1).*(hann(500)*ones(1,4000));
+bigMatrix_2 = detrend(bigMatrix_2).*(hann(500)*ones(1,4000));
+
+% compute fft of each matrix
+bigMatrix_1 = fft(bigMatrix_1); 
+bigMatrix_2 = fft(bigMatrix_2);
+
+% calculate the amplitudes, include a normalization factor
+bigMatrix_1amp=(abs(bigMatrix_1(1:p/2+1,:)).^2)/p; 
+bigMatrix_1amp(2:p/2,:)=2*bigMatrix_1amp(2:p/2,:);
+bigMatrix_1amp = bigMatrix_1amp(2:251,:); % dumping the mean
+bigMatrix_2amp=(abs(bigMatrix_2(1:p/2+1,:)).^2)/p; 
+bigMatrix_2amp(2:p/2,:)=2*bigMatrix_2amp(2:p/2,:);
+bigMatrix_2amp = bigMatrix_2amp(2:251,:); % dumping the mean
+
+% taking mean amplitudes across the rows
+for i=1:20:4000 
+    bigMatrix_1mean(:,floor(i/20)+1) = mean(bigMatrix_1amp(:,i:i+19),2);
+    bigMatrix_2mean(:,floor(i/20)+1) = mean(bigMatrix_1amp(:,i:i+19),2);
+end
+
+%turn mean amplitude result into a column vector
+bigMatrix_1pdf = bigMatrix_1mean(:);
+bigMatrix_1pdf = sort(bigMatrix_1pdf,'descend'); 
+err_low_data1 = prctile(bigMatrix_1pdf,0.025);
+err_high_data1 = prctile(bigMatrix_1pdf,0.975);
+ratio_monteCarlo_Gaussian1 = err_high_data1/err_low_data1;
+
+%turn mean amplitude result into a column vector
+bigMatrix_1pdf = bigMatrix_1mean(:);
+bigMatrix_1pdf = sort(bigMatrix_1pdf,'descend'); 
+err_low_data1 = prctile(bigMatrix_1pdf,0.025);
+err_high_data1 = prctile(bigMatrix_1pdf,0.975);
+ratio_monteCarlo_Gaussian1 = err_high_data1/err_low_data1;
+
+bigMatrix_pdf_hist = histogram(bigMatrix_1pdf); %histogram just a way of visualizing, just need info from raw values (have it once sorted)
+
+% Do the empirical error bars from the Monte Carlo process (calculate here
+% via percentile ranges) match your expectations based on the number of
+% segments you have available (calculated here via nu, errhi&errlow)?
+
+% Does the use of overlapping segments reduce your effective degrees of
+% freedom? Probably no...?
+
+% If you won't window (don't mulitply by Hanning), does the use of
+% overlapping segments reduce your effective degrees of freedom?
+% Confused...
+
+% Which of any of the tables appears to be more useful for the Hanning
+% window (in terms of DOF)? Do you think the results would change if you
+% considered red noise?
+
+%% Compute a spectrum of the pressure data...
+% ...that you used in problem sets 3 and 4.
