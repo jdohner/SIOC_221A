@@ -4,7 +4,7 @@
 %
 % due date November 9, 2017
 
-%clear all; close all;
+clear all; close all;
 
 %% Evaluate whether using a 50% overlap modifies the degrees of freedom
 
@@ -17,20 +17,51 @@
 % number.
 % TODO: figure out how to implement the overlapping data
 
-N = 10000; % length of each chunk of data
+% 10,000 is the number of datapoints we have
+N = 500; % length of each chunk of data
 M = 20; % number of segments splitting data into
-p = N/M; % datapoints per segment
+%p = N/M; % datapoints per segment
 
-%%%%%% Sarah's version %%%%%%
+%% %%%%%% Sarah's version %%%%%%
 
 longVector = randn(N*M,1);
 longVector_1 = reshape(longVector,N,M);
 longVector_2 = longVector(N/2+1:length(longVector)-N/2,:);
 longVector_2 = reshape(longVector_2,N,M-1);
 longVector_3 = [longVector_1 longVector_2];
-% do this 200 times for Monte Carlo
-% analyze spectra computed from this matrix
 
+longVector_3 = detrend(longVector_3).*(hann(500)*ones(1,39));
+longVector_3 = fft(longVector_3);
+longVector_3amp = (abs(longVector_3(1:N/2+1,:)).^2)/N;
+longVector_3amp = longVector_3amp(2:251,:);
+longVector_3mean = mean(longVector_3amp, 2);
+longVector_3mean = longVector_3mean';
+frequency=(0:N/2-1)/N; % for N even
+
+figure
+semilogy(frequency,longVector_3mean, '-r')
+xlabel('\fontsize{14}frequency')
+ylabel('\fontsize{14}units')
+title('\fontsize{16}Fourier Transform of Gaussian White Noise and Autoregressive Datasets')
+legend('\fontsize{12}Gaussian white noise','Autoregressive data');
+
+
+%% do this 200 times for Monte Carlo
+%longVector_MC = randn(N*M,1,200);
+
+for i=1:200
+    longVector_MC(:,:,i) = randn(N*M,1); % 200 times one long vector
+    longVector_MC1(:,:,i) = reshape(longVector_MC(:,:,i),N,M);
+    longVector_MC2(:,:,i) = longVector_MC(N/2+1:(N*M)-N/2,:,i); % 200 times one long vector with 50% offset
+    % bug in line below from dimension mismatch - how to reshape in 3d
+    % matrices?
+    longVector_MC2(:,:,i) = reshape(longVector_MC2(:,:,i),[N,M-1]); % 200 times reshaped vector with 50% offset
+    %lonvector_MC3(:,:,i) = [longVector_MC1(:,:,i) longVector_MC2(:,:,i)];
+end
+
+
+
+%% 
 %%%%%% my version %%%%%%
 
 % create long column vector to be reshaped
