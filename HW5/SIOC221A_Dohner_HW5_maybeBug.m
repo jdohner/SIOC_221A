@@ -83,7 +83,7 @@ bigMatrix_amp=(abs(bigMatrix(1:p/2+1,:)).^2)/p; %needed to move the /p to this l
 bigMatrix_amp(2:p/2,:)=2*bigMatrix_amp(2:p/2,:);
 bigMatrix_amp = bigMatrix_amp(2:251,:); % dumping the mean
 
-
+% taking the mean across each of the 200 matrices
 for i=1:20:4000 
     bigMatrix_mean_amp(:,floor(i/20)+1) = mean(bigMatrix_amp(:,i:i+19),2);
 end
