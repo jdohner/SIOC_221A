@@ -1,14 +1,11 @@
 % file SIOC 221A HW 6
 % 
-% author Julia Dohner
+% author Julia Dohner, with help from Annie Adelson
 %
 % due date November 9, 2017
 
 clear all; close all;
 
-% TODO: make sure I get all the normalizations right, esp for the pressure
-% data where I have to multiply by T/N2 or something, as well as for the
-% parts with hanning windows applied. See sarah's solutions for help
 
 %% Evaluate whether using a 50% overlap modifies the degrees of freedom
 
@@ -175,13 +172,13 @@ pressure_sub3 = [pressure_sub1 pressure_sub2]; % 3 segments, overlapping
 
 pressure_sub3 = detrend(pressure_sub3).*(hann(4154)*ones(1,3));
 pressure_sub3 = fft(pressure_sub3);
-T = (4154*361)/(24*3600);% total time in days, so datapoints*time interval
+T = (4154*361)/(2*24*3600);% total time in days, so datapoints*time interval
 normalizationFactor = T/(4154^2); % 4154 = number of data points
 pressure_sub3amp = 2.*(abs(pressure_sub3(1:N_pressure/2+1,:)).^2).*normalizationFactor; % amplitude of first half
 pressure_sub3mean = mean(pressure_sub3amp,2);
 pressure_sub3mean = pressure_sub3mean'; % turn into row vector
 
-frequency = (0:2078-1)/(2078*361)*(24*3600); 
+frequency = (0:2078-1)/(2*2078*361)*(24*3600); 
 
 nu = 2*3; % DOF = 2*number of segments
 err_high_pressure = nu/chi2inv(0.05/2,nu);
@@ -190,8 +187,9 @@ ratio_chi2_pressure = err_high_pressure/err_low_pressure;
 
 
 figure
-semilogy(frequency,pressure_sub3mean, '-b', [20 20],[err_low_pressure err_high_pressure]*pressure_sub3mean(1000), '-r');
+semilogy(frequency,pressure_sub3mean, '-b', [10 10],[err_low_pressure err_high_pressure]*pressure_sub3mean(1000), '-r');
 xlabel('\fontsize{14}cycles per day')
 ylabel('\fontsize{14}dbar^{2}/cpd')
 title('\fontsize{16}Spectrum of 2015 Scripps Pier Pressure');
-legend('\fontsize{12}Pier Pressure');
+legend('\fontsize{12}Pier Pressure','\chi^{2}-computed Uncertainty');
+
