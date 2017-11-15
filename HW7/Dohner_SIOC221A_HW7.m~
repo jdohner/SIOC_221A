@@ -10,7 +10,6 @@
 clear all; close all;
 
 % TODO: rename air temp and sea temp as T0 and Ta
-% note: 1440 minutes/day
 
 %% inspect the data
 
@@ -19,14 +18,13 @@ time = [];
 swTemp = [];
 airTemp = [];
 
-% time is 04/21/2015 to 06/22/2016 (427.5882 days)
+% time is 04/21/2015 to 06/22/2016
 time = [time; ncread(strcat('OS_Stratus_2015_D_M.nc'),'TIME')];
 swTemp = [swTemp; ncread(strcat('OS_Stratus_2015_D_M.nc'),'TEMP')];
 airTemp = [airTemp; ncread(strcat('OS_Stratus_2015_D_M.nc'),'AIRT')];
 
 % examining the time increments between adjacent measurements
 t_diff = diff(time);
-t_diff_mean = mean(t_diff);
 minDiff = min(t_diff); 
 maxDiff = max(t_diff);
 plot(t_diff);
@@ -58,16 +56,14 @@ legend('\fontsize{12}Sea', '\fontsize{12}Air');
 % lecture 7 is good for this
 
 % data is taken every minute (86400 (seconds in a day)*t_diff = ~60 secs)
-% split into at least 15-day chunks to resolve M2 vs. S2 tides
-% data is taken every minute: 15*1440 (mins/day) = 21600 long chunks
-M = 16; % number of segments splitting data into
-%N = (floor(length(time)/4)*4)
-N = (1/M)*(16*floor(length(time)/16)); % length of each chunk of data (aka segment 
+% split into 2 chunks to resolve seasonal cycle
+M = 2; % number of segments splitting data into
+N = 2*floor(length(time)/4); % length of each chunk of data (aka segment 
 % length,  making sure divisible by 4)
 
 % split into segments
-swTemp2 = reshape(swTemp(1:N*M),N,M);
-airTemp2 = reshape(airTemp(1:N*M),N,M);
+swTemp2 = reshape(swTemp(1:N*2),N,M);
+airTemp2 = reshape(airTemp(1:N*2),N,M);
 % don't need to do overlapping segments
 
 % apply Hanning window
@@ -88,41 +84,18 @@ normalizationFactor = T/(N^2);
 swTemp_amp = swTemp_amp.*normalizationFactor;
 airTemp_amp = airTemp_amp.*normalizationFactor;
 % average multiple segments
-swTemp_mean = mean(swTemp_amp,2);
-airTemp_mean = mean(airTemp_amp,2);
+swTemp2_mean = mean(swTemp_amp,2);
+airTemp2_mean = mean(airTemp_amp,2);
 % get an uncertainty estimate
-nu = 2*M; % DOF = 2*number of segments
-err_high_sw = nu/chi2inv(0.05/2,nu);
-err_low_sw = nu/chi2inv(1-0.05/2,nu);
-ratio_chi2_sw = err_high_sw/err_low_sw;
-err_high_air = nu/chi2inv(0.05/2,nu);
-err_low_air = nu/chi2inv(1-0.05/2,nu);
-ratio_chi2_air = err_high_air/err_low_air;
-
+nu = 2*3; % DOF = 2*number of segments
+err_high_pressure = nu/chi2inv(0.05/2,nu);
+err_low_pressure = nu/chi2inv(1-0.05/2,nu);
+ratio_chi2_pressure = err_high_pressure/err_low_pressure;
 
 % plot
-% it'll resolve up to 720 cpd
-% I feel like I should expect it to resolve both M2 and S2 here based on
-% class notes
-frequency = (0:length(swTemp_mean)-1)/(2*length(swTemp_mean)*t_diff_mean); % divided by total time
 figure
-subplot(2,1,1)
-semilogy(frequency,swTemp_mean, '-b', [10 10],[err_low_sw err_high_sw]*swTemp_mean(2000), '-r');
+semilogy(frequency,swTemp2_mean, '-b', [10 10],[err_low_pressure err_high_pressure]*pressure_sub3mean(1000), '-r');
 xlabel('\fontsize{14}cycles per day')
-ylabel('\fontsize{14}degC^{2}/cpd')
-title('\fontsize{16}Spectrum of Seawater Temp');
-legend('\fontsize{12}SW Temp','\chi^{2}-computed Uncertainty');
-subplot(2,1,2)
-semilogy(frequency,airTemp_mean, '-r', [10 10],[err_low_air err_high_air]*airTemp_mean(2000), '-r');
-xlabel('\fontsize{14}cycles per day')
-ylabel('\fontsize{14}degC^{2}/cpd')
-title('\fontsize{16}Spectrum of Air Temp');
-legend('\fontsize{12}Air Temp','\chi^{2}-computed Uncertainty');
-
-% nyquist = 1 cycle every 2 minutes
-% or 1 cycle/(2/1440) = 0.000347 cpd
-% frequency resolution = nyquist/N/2
-% delf = (1/(2/1440))/(16*1440/2) = 0.0625 (also = 1/16)
-
-
-
+ylabel('\fontsize{14}dbar^{2}/cpd')
+title('\fontsize{16}Spectrum of 2015 Scripps Pier Pressure');
+legend('\fontsize{12}Pier Pressure','\chi^{2}-computed Uncertainty');
