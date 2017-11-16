@@ -58,12 +58,11 @@ legend('\fontsize{12}Sea', '\fontsize{12}Air');
 % lecture 7 is good for this
 
 % data is taken every minute (86400 (seconds in a day)*t_diff = ~60 secs)
-% split into at least 15-day chunks to resolve M2 vs. S2 tides
-% data is taken every minute: 15*1440 (mins/day) = 21600 long chunks
-M = 16; % number of segments splitting data into
-%N = (floor(length(time)/4)*4)
-N = (1/M)*(16*floor(length(time)/16)); % length of each chunk of data (aka segment 
-% length,  making sure divisible by 4)
+% split into 16-day chunks to resolve M2 vs. S2 tides
+% want 16-day chunks (so chunk length is 16*1440 = 23040)
+% TODO: return to this to make more accurate chunk length estimate
+N = 23040;
+M = floor(length(time)/23040); % number of chunks
 
 % split into segments
 swTemp2 = reshape(swTemp(1:N*M),N,M);
@@ -71,19 +70,19 @@ airTemp2 = reshape(airTemp(1:N*M),N,M);
 % don't need to do overlapping segments
 
 % apply Hanning window
-swTemp2 = detrend(swTemp2).*(hann(length(swTemp2(:,1)))*ones(1,M));
-airTemp2 = detrend(airTemp2).*(hann(length(airTemp2(:,1)))*ones(1,M));
+swTemp3 = detrend(swTemp2).*(hann(length(swTemp2(:,1)))*ones(1,M));
+airTemp3 = detrend(airTemp2).*(hann(length(airTemp2(:,1)))*ones(1,M));
 % compute fft
-swTemp2 = fft(swTemp2);
-airTemp2 = fft(airTemp2);
+swTemp4 = fft(swTemp3);
+airTemp4 = fft(airTemp3);
 % compute squared amplitude for half of fft
-swTemp_amp = (abs(swTemp2(1:length(swTemp2)/2+1,:)).^2);
-airTemp_amp = (abs(airTemp2(1:length(airTemp2)/2+1,:)).^2);
+swTemp_amp = (abs(swTemp4(1:length(swTemp4)/2+1,:)).^2);
+airTemp_amp = (abs(airTemp4(1:length(airTemp4)/2+1,:)).^2);
 % multiply by a factor of 2
 swTemp_amp = 2.*swTemp_amp;
 airTemp_amp = 2.*airTemp_amp;
 % normalize
-T = length(airTemp2)/1440; % total time in days in each segment (1440 mins/day)
+T = length(airTemp2)/1440; % total time in days in each segment (1440 mins/day) = 16
 normalizationFactor = T/(N^2);
 swTemp_amp = swTemp_amp.*normalizationFactor;
 airTemp_amp = airTemp_amp.*normalizationFactor;
@@ -107,22 +106,53 @@ ratio_chi2_air = err_high_air/err_low_air;
 frequency = (0:length(swTemp_mean)-1)/(2*length(swTemp_mean)*t_diff_mean); % divided by total time
 figure
 subplot(2,1,1)
-semilogy(frequency,swTemp_mean, '-b', [10 10],[err_low_sw err_high_sw]*swTemp_mean(2000), '-r');
+loglog(frequency,swTemp_mean, '-b', [10 10],[err_low_sw err_high_sw]*0.0001, '-r');
+grid on;
 xlabel('\fontsize{14}cycles per day')
 ylabel('\fontsize{14}degC^{2}/cpd')
 title('\fontsize{16}Spectrum of Seawater Temp');
 legend('\fontsize{12}SW Temp','\chi^{2}-computed Uncertainty');
 subplot(2,1,2)
-semilogy(frequency,airTemp_mean, '-r', [10 10],[err_low_air err_high_air]*airTemp_mean(2000), '-r');
+loglog(frequency,airTemp_mean, '-r', [10 10],[err_low_air err_high_air]*0.01, '-b');
+grid on;
 xlabel('\fontsize{14}cycles per day')
 ylabel('\fontsize{14}degC^{2}/cpd')
 title('\fontsize{16}Spectrum of Air Temp');
 legend('\fontsize{12}Air Temp','\chi^{2}-computed Uncertainty');
 
-% nyquist = 1 cycle every 2 minutes
-% or 1 cycle/(2/1440) = 0.000347 cpd
-% frequency resolution = nyquist/N/2
-% delf = (1/(2/1440))/(16*1440/2) = 0.0625 (also = 1/16)
+% For full record:
+% nyquist = 1 cycle every 2 minutes (0.5 cycle per minute)
+% or 1 cycle/(2/1440) = 720 cpd
+% lowest frequency can resolve: 1 cycle per length of record
+% length of record = 615727 minutes, so fundamental freq = 1/(615727) 1/mins
+% in days: length of record = 427.588 days, so fundFreq = 1/427.588 1/days
+% frequency resolution = 1/T = 1/427.588 cpd = 0.0023 cpd
 
+% For 16-day chunks:
+% nyquist = 1 cycle per 2 minutes (0.5 cycle per minute)
+% or 1 cycle/(2/1440) = 720 cpd 
+% lowest frequency can resolve: 1 cycle per length of record
+% length of record = 16 days, fundamental freq = 1/16 cpd
+% frequency resolution = 1/T = 1/16 cpd = 0.0625 cpd
+
+% check parseval's (total variance in time domain = total variance in
+% frequency domain)
+% TODO: this doesn't actually equal 1 at the moment
+df = 1/T;
+variance_sw = nanmean(swTemp2.^2); % taking mean down columns
+variance_air = nanmean(airTemp2.^2);
+sum_spec_sw = sum(swTemp_amp).*df; % taking sums down columns
+sum_spec_air = sum(airTemp_amp).*df;
+parsevalSW = sum_spec_sw./variance_sw; % should = 1
+parsevalAir = sum_spec_air./variance_air;
+% sum_spec_sw and sum_spec_air are much smaller than variances
+
+% drop in y per order of magnitude increase in x for both plots early
+% drops 1/2 order of magnitude in y for one order magnitude increase in x
+% spectral slope of f^(-1/2)
+% then after 100 cpd, air temp plot drops off more quickly, with slope of
+% f^-1
+
+%% show a variance preserving version of your spectra
 
 
