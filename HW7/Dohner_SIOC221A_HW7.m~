@@ -28,7 +28,7 @@ t_diff = diff(time);
 t_diff_mean = mean(t_diff);
 minDiff = min(t_diff); 
 maxDiff = max(t_diff);
-figure('name','Differences in measurement interval');
+figure('Differences in measurement interval');
 plot(t_diff);
 % after plotting the values, I see that the t_diff values range between
 % 0.0006944444 and 0.00069444452. The differences are sufficiently small
@@ -106,6 +106,7 @@ ratio_chi2_air = err_high_air/err_low_air;
 % I feel like I should expect it to resolve both M2 and S2 here based on
 % class notes
 frequency = (0:length(swTemp_mean)-1)/(2*length(swTemp_mean)*t_diff_mean); % divided by total time
+figure
 figure('name','Spectra of Seawater and Air Temperatures');
 subplot(2,1,1)
 loglog(frequency,swTemp_mean, '-b', [10 10],[err_low_sw err_high_sw]*0.0001, '-r');
@@ -197,7 +198,7 @@ fmean_AcAirTemp = fft(mean_AcAirTemp((N/4):(N*3/4)+1)); % take middle of record
 fmean_AcSwTemp2 = fmean_AcSwTemp(1:(length(fmean_AcSwTemp)/2),:);
 fmean_AcAirTemp2 = fmean_AcAirTemp(1:(length(fmean_AcAirTemp)/2),:);
 
-figure('name','Spectra of Seawater and Air Temperatures Calculated by Autocovariance');
+figure('name','Spectra of Seawater and Air Temperatures ');
 frequencyAc = (0:length(fmean_AcSwTemp2)-1)/(2*length(fmean_AcSwTemp2)*t_diff_mean); % divided by total time
 subplot(2,1,1)
 loglog(frequencyAc,abs(fmean_AcSwTemp2),'-r')
