@@ -78,7 +78,10 @@ airTemp4 = fft(airTemp3);
 % compute squared amplitude for half of fft
 swTemp_amp = (abs(swTemp4(1:length(swTemp4)/2+1,:)).^2);
 airTemp_amp = (abs(airTemp4(1:length(airTemp4)/2+1,:)).^2);
-% multiply by a factor of 2
+% % get rid of end members
+swTemp_amp = swTemp_amp(2:length(swTemp_amp));
+airTemp_amp = airTemp_amp(2:length(airTemp_amp));
+% multiply by a factor of 2 to account for lost variance
 swTemp_amp = 2.*swTemp_amp;
 airTemp_amp = 2.*airTemp_amp;
 % normalize
@@ -155,4 +158,51 @@ parsevalAir = sum_spec_air./variance_air;
 
 %% show a variance preserving version of your spectra
 
+figure
+subplot(2,1,1)
+loglog(frequency,frequency'.*swTemp_mean, '-b', [10 10],[err_low_sw err_high_sw]*0.0001, '-r');
+grid on;
+xlabel('\fontsize{14}cycles per day')
+ylabel('\fontsize{14}degC^{2}')
+title('\fontsize{16}Spectrum of Seawater Temp');
+legend('\fontsize{12}SW Temp','\chi^{2}-computed Uncertainty');
+subplot(2,1,2)
+loglog(frequency,frequency'.*airTemp_mean, '-r', [10 10],[err_low_air err_high_air]*0.01, '-b');
+grid on;
+xlabel('\fontsize{14}cycles per day')
+ylabel('\fontsize{14}degC^{2}')
+title('\fontsize{16}Spectrum of Air Temp');
+legend('\fontsize{12}Air Temp','\chi^{2}-computed Uncertainty');
+
+%% compute the autocovariance of your data
+
+% segment situation:
+% for i = 1:26
+%     % swTemp2 and airTemp2 are reshaped data // do I want to use full
+%     % record?
+%     AcSwTemp = xcov(swTemp2(:,i),swTemp2(:,i),'unbiased'); % autocovariances
+%     AcAirTemp = xcov(airTemp2(:,i),airTemp2(:,i),'unbiased'); % autocovariances
+% end
+
+
+% unsegmented full record:
+N_Ac = floor(length(time)/8)*8; % use some number of datapoints divisible by 4
+
+AcSwTemp = xcorr(swTemp,swTemp)/max(xcorr(swTemp,swTemp));
+AcAirTemp = xcorr(airTemp,airTemp)/max(xcorr(airTemp,airTemp));
+mean_AcSwTemp = mean(AcSwTemp,2);
+mean_AcAirTemp = mean(AcAirTemp,2);
+fmean_AcSwTemp = fft(mean_AcSwTemp((N/4):(N*3/4)+1)); % take middle of record
+fmean_AcAirTemp = fft(mean_AcAirTemp((N/4):(N*3/4)+1)); % take middle of record
+% take first half of record
+fmean_AcSwTemp2 = fmean_AcSwTemp(1:(length(fmean_AcSwTemp)/2),:);
+fmean_AcAirTemp2 = fmean_AcAirTemp(1:(length(fmean_AcAirTemp)/2),:);
+
+frequencyAc = (0:length(fmean_AcSwTemp2)-1)/(2*length(fmean_AcSwTemp2)*t_diff_mean); % divided by total time
+subplot(2,1,1)
+loglog(frequencyAc,abs(fmean_AcSwTemp2),'-r')
+legend('FFT of averaged autocovariance of seawater temp data')
+subplot(2,1,2)
+loglog(frequencyAc,abs(fmean_AcAirTemp2),'-b')
+legend('FFT of averaged autocovariance of air temp data')
 
