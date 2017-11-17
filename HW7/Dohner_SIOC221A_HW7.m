@@ -5,7 +5,7 @@
 % due date November 21, 2017
 %
 % I certify that this represents my own work and that I have not worked
-% with classmates or other individuals to compelte this assignment. -JLD
+% with classmates or other individuals to complete this assignment. -JLD
 
 clear all; close all;
 
@@ -157,16 +157,20 @@ parsevalAir = sum_spec_air./variance_air;
 
 %% show a variance preserving version of your spectra
 
+FswTemp_mean = frequency'.*swTemp_mean;
+FairTemp_mean = frequency'.*airTemp_mean;
+
+
 figure('name','Variance-preserving Spectra of Seawater and Air Temperatures');
 subplot(2,1,1)
-loglog(frequency,frequency'.*swTemp_mean, '-b', [10 10],[err_low_sw err_high_sw]*0.0001, '-r');
+loglog(frequency,FswTemp_mean, '-b', [10 10],[err_low_sw err_high_sw]*FswTemp_mean(100), '-r');
 grid on;
 xlabel('\fontsize{14}cycles per day')
 ylabel('\fontsize{14} \circC^{2}')  
 title('\fontsize{16}Spectrum of Seawater Temp');
 legend('\fontsize{12}SW Temp','\chi^{2}-computed Uncertainty');
 subplot(2,1,2)
-loglog(frequency,frequency'.*airTemp_mean, '-r', [10 10],[err_low_air err_high_air]*0.01, '-b');
+loglog(frequency,FairTemp_mean, '-r', [10 10],[err_low_air err_high_air]*FairTemp_mean(100), '-b');
 grid on;
 xlabel('\fontsize{14}cycles per day')
 ylabel('\fontsize{14} \circC^{2}')
@@ -185,12 +189,14 @@ legend('\fontsize{12}Air Temp','\chi^{2}-computed Uncertainty');
 
 
 % unsegmented full record:
-N_Ac = floor(length(time)/8)*8; % use some number of datapoints divisible by 4
+N_Ac = floor(length(time)/8)*8; % use some number of datapoints divisible by 8
 
-AcSwTemp = xcorr(swTemp,swTemp)/max(xcorr(swTemp,swTemp));
-AcAirTemp = xcorr(airTemp,airTemp)/max(xcorr(airTemp,airTemp));
-mean_AcSwTemp = mean(AcSwTemp,2);
-mean_AcAirTemp = mean(AcAirTemp,2);
+% AcSwTemp = xcorr(swTemp,swTemp)/max(xcorr(swTemp,swTemp));
+% AcAirTemp = xcorr(airTemp,airTemp)/max(xcorr(airTemp,airTemp));
+AcSwTemp = xcov(swTemp,swTemp,'unbiased');
+AcAirTemp = xcov(airTemp,airTemp,'unbiased');
+mean_AcSwTemp = AcSwTemp; %mean(AcSwTemp,2); % don't need to take mean here because you're not using segments
+mean_AcAirTemp = AcAirTemp; %mean(AcAirTemp,2);
 fmean_AcSwTemp = fft(mean_AcSwTemp((N/4):(N*3/4)+1)); % take middle of record
 fmean_AcAirTemp = fft(mean_AcAirTemp((N/4):(N*3/4)+1)); % take middle of record
 % take first half of record
@@ -205,4 +211,9 @@ legend('FFT of averaged autocovariance of seawater temp data')
 subplot(2,1,2)
 loglog(frequencyAc,abs(fmean_AcAirTemp2),'-b')
 legend('FFT of averaged autocovariance of air temp data')
+xlabel('\fontsize{14}cycles per day')
+ylabel('\fontsize{14} \circC^{2}')
+title('\fontsize{16}Spectra Calculated by Autocovariance');
+
+
 
