@@ -53,9 +53,7 @@ datetick('x','mm/dd/yy')
 ylabel('\circC');
 legend('\fontsize{12}Sea', '\fontsize{12}Air');
 
-%% compute the spectra for T0 and Ta
-
-% lecture 7 is good for this
+%% compute the spectra for To and Ta
 
 % data is taken every minute (86400 (seconds in a day)*t_diff = ~60 secs)
 % split into 16-day chunks to resolve M2 vs. S2 tides (need to be at least
@@ -63,30 +61,36 @@ legend('\fontsize{12}Sea', '\fontsize{12}Air');
 % want 16-day chunks (so chunk length is 16*1440 = 23040)
 N = 23040;
 M = floor(length(time)/23040); % number of chunks
+T = N/1440; % total time in days in each segment (1440 mins/day) = 16
 
 % split into segments
-swTemp2 = reshape(swTemp(1:N*M),N,M);
-airTemp2 = reshape(airTemp(1:N*M),N,M);
+swTemp3 = reshape(swTemp(1:N*M),N,M);
+airTemp3 = reshape(airTemp(1:N*M),N,M); 
 
-% detrend
-swTemp3 = detrend(swTemp2);
-airTemp3 = detrend(airTemp2);
 % compute fft
 swTemp4 = fft(swTemp3);
 airTemp4 = fft(airTemp3);
 % compute squared amplitude for half of fft
-swTemp_amp = (abs(swTemp4(1:length(swTemp4)/2+1,:)).^2);
-airTemp_amp = (abs(airTemp4(1:length(airTemp4)/2+1,:)).^2);
-% get rid of the mean
-swTemp_amp = swTemp_amp(2:length(swTemp_amp),:);
-airTemp_amp = airTemp_amp(2:length(airTemp_amp),:);
-% multiply by a factor of 2 to account for lost variance
-swTemp_amp = 2.*swTemp_amp;
-airTemp_amp = 2.*airTemp_amp;
+swTemp_amp = (abs(swTemp4(1:length(swTemp4)/2+1,:)).^2); % +1 for even N
+airTemp_amp = (abs(airTemp4(1:length(airTemp4)/2+1,:)).^2); 
+
+% check parseval's (total variance in time domain = total variance in
+% frequency domain)
+df = 1/T;
+dt = 1/t_diff_mean;
+variance_sw = sum(swTemp3.^2).*dt; % taking sums down columns
+variance_air = sum(airTemp3.^2).*dt;
+sum_spec_sw = sum(swTemp_amp).*df; % taking sums down columns
+sum_spec_air = sum(airTemp_amp).*df;
+parsevalSW = sum_spec_sw./variance_sw; % should = 1
+parsevalAir = sum_spec_air./variance_air;
+
+% multiply by a factor of 2 to account for lost variance, excluding mean
+swTemp_amp(2:end-1) = 2.*swTemp_amp(2:end-1);
+airTemp_amp(2:end-1) = 2.*airTemp_amp(2:end-1);
 % normalize
-T = N/1440; % total time in days in each segment (1440 mins/day) = 16
 normalizationFactor = T/(N^2);
-swTemp_amp = swTemp_amp.*normalizationFactor; % BUG: this shouldn't be just a column matrix, mean comes out as one point
+swTemp_amp = swTemp_amp.*normalizationFactor; 
 airTemp_amp = airTemp_amp.*normalizationFactor;
 % average multiple segments
 swTemp_mean = mean(swTemp_amp,2);
@@ -101,10 +105,6 @@ err_low_air = nu/chi2inv(1-0.05/2,nu);
 ratio_chi2_air = err_high_air/err_low_air;
 
 
-% plot
-% it'll resolve up to 720 cpd
-% I feel like I should expect it to resolve both M2 and S2 here based on
-% class notes
 frequency = (0:length(swTemp_mean)-1)/(2*length(swTemp_mean)*t_diff_mean); % divided by total time
 figure('name','Spectra of Seawater and Air Temperatures');
 subplot(2,1,1)
@@ -137,18 +137,6 @@ legend('\fontsize{12}Air Temp','\chi^{2}-computed Uncertainty');
 % length of record = 16 days, fundamental freq = 1/16 cpd
 % frequency resolution = 1/T = 1/16 cpd = 0.0625 cpd
 
-% check parseval's (total variance in time domain = total variance in
-% frequency domain)
-% TODO: this doesn't actually equal 1 at the moment
-df = 1/T;
-variance_sw = nanmean(swTemp2.^2); % taking mean down columns
-variance_air = nanmean(airTemp2.^2);
-sum_spec_sw = sum(swTemp_amp).*df; % taking sums down columns
-sum_spec_air = sum(airTemp_amp).*df;
-parsevalSW = sum_spec_sw./variance_sw; % should = 1
-parsevalAir = sum_spec_air./variance_air;
-% sum_spec_sw and sum_spec_air are much smaller than variances
-
 % drop in y per order of magnitude increase in x for both plots early
 % drops 1/2 order of magnitude in y for one order magnitude increase in x
 % spectral slope of f^(-1/2)
@@ -167,26 +155,17 @@ loglog(frequency,FswTemp_mean, '-b', [10 10],[err_low_sw err_high_sw]*FswTemp_me
 grid on;
 xlabel('\fontsize{14}cycles per day')
 ylabel('\fontsize{14} \circC^{2}')  
-title('\fontsize{16}Spectrum of Seawater Temp');
+title('\fontsize{16}Variance-Preserving Spectrum of Seawater Temp');
 legend('\fontsize{12}SW Temp','\chi^{2}-computed Uncertainty');
 subplot(2,1,2)
 loglog(frequency,FairTemp_mean, '-r', [10 10],[err_low_air err_high_air]*FairTemp_mean(100), '-b');
 grid on;
 xlabel('\fontsize{14}cycles per day')
 ylabel('\fontsize{14} \circC^{2}')
-title('\fontsize{16}Spectrum of Air Temp');
+title('\fontsize{16}Variance-Preserving Spectrum of Air Temp');
 legend('\fontsize{12}Air Temp','\chi^{2}-computed Uncertainty');
 
 %% compute the autocovariance of your data
-
-% segment situation:
-% for i = 1:26
-%     % swTemp2 and airTemp2 are reshaped data // do I want to use full
-%     % record?
-%     AcSwTemp = xcov(swTemp2(:,i),swTemp2(:,i),'unbiased'); % autocovariances
-%     AcAirTemp = xcov(airTemp2(:,i),airTemp2(:,i),'unbiased'); % autocovariances
-% end
-
 
 % unsegmented full record:
 N_Ac = floor(length(time)/8)*8; % use some number of datapoints divisible by 8
@@ -206,14 +185,18 @@ fmean_AcAirTemp2 = fmean_AcAirTemp(1:(length(fmean_AcAirTemp)/2),:);
 figure('name','Spectra of Seawater and Air Temperatures Calculated by Autocovariance');
 frequencyAc = (0:length(fmean_AcSwTemp2)-1)/(2*length(fmean_AcSwTemp2)*t_diff_mean); % divided by total time
 subplot(2,1,1)
-loglog(frequencyAc,abs(fmean_AcSwTemp2),'-r')
+loglog(frequencyAc,abs(fmean_AcSwTemp2),'-b')
+title('\fontsize{16}Seawater Temp Spectra Calculated by Autocovariance');
 legend('FFT of averaged autocovariance of seawater temp data')
-subplot(2,1,2)
-loglog(frequencyAc,abs(fmean_AcAirTemp2),'-b')
-legend('FFT of averaged autocovariance of air temp data')
-xlabel('\fontsize{14}cycles per day')
+xlabel('\fontsize{14}lag (days)')
 ylabel('\fontsize{14} \circC^{2}')
-title('\fontsize{16}Spectra Calculated by Autocovariance');
+subplot(2,1,2)
+loglog(frequencyAc,abs(fmean_AcAirTemp2),'-r')
+title('\fontsize{16}Air Temp Spectra Calculated by Autocovariance');
+legend('FFT of averaged autocovariance of air temp data')
+xlabel('\fontsize{14}lag (days)')
+ylabel('\fontsize{14} \circC^{2}') % but this should probably be R, so correlation (between 0 and 1)
+
 
 
 
