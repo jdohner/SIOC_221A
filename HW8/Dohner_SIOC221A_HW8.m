@@ -6,38 +6,69 @@
 
 clear all; close all;
 
+% TODO: whether to put if statement before or after alias period
+% calculation
+
+
 %% aliasing
 
-% TODO:go back and do this for S1
+
+f_M2=24/12.42; % cycles per day
+f_S1 = 24/24;
 
 % fast sampling
-f_sampling=1/(0.99349); % cycles per day
-f_M2=24/12.42; % cycles per day
-f_Nyquist=f_sampling/2;
-M_fast=floor(f_M2/f_Nyquist); % compute the integer ratio of the two frequencies.
-alias = f_M2 - floor(f_M2/f_Nyquist)*f_Nyquist;
-alias_period = 1/alias;
-% Note: if M is odd then reset
-if(rem(M_fast,2)~=0) 
-    alias=f_Nyquist-alias; 
-end
-%This calculation shows that M is 3 and the tidal energy aliases into a
-% 2.3667 day period (alias_period)
+f_sampling_fast=1/(0.99349); % cycles per day
+f_Nyquist_fast=f_sampling_fast/2;
 
-f_S1 = 24/24; % cycles per day
+% M2 aliasing in fast sampling
+M_fast_M2=floor(f_M2/f_Nyquist_fast); % compute the integer ratio of the two frequencies.
+alias_fast_M2 = f_M2 - floor(f_M2/f_Nyquist_fast)*f_Nyquist_fast;
+% Note: if M is odd then reset - What is this?? Why not before above line?
+if(rem(M_fast_M2,2)~=0) 
+    alias_fast_M2=f_Nyquist_fast-alias_fast_M2; 
+end
+alias_period_fast_M2 = 1/alias_fast_M2
+
+% S1 aliasing in fast sampling
+M_fast_S1=floor(f_S1/f_Nyquist_fast); % compute the integer ratio of the two frequencies.
+alias_fast_S1 = f_S1 - floor(f_S1/f_Nyquist_fast)*f_Nyquist_fast;
+% Note: if M is odd then reset
+if(rem(M_fast_S1,2)~=0) 
+    alias_fast_S1=f_Nyquist_fast - alias_fast_S1; 
+end
+alias_period_fast_S1 = 1/alias_fast_S1
+
+
+% Fast sampling, M2: M = 3, alias_period = 2.3667 days
+% Fast sampling, S1: M = 1, alias_period = 2.0132
+
 
 % science sampling
 f_sampling_sci=1/(20.86455); % cycles per day
 f_Nyquist_sci=f_sampling_sci/2;
-M_sci=floor(f_M2/f_Nyquist_sci); % compute the integer ratio of the two frequencies.
-alias_sci = f_M2 - floor(f_M2/f_Nyquist_sci)*f_Nyquist_sci;
-alias_period_sci = 1/alias_sci;
+
+% M2 aliasing in science sampling
+M_sci_M2=floor(f_M2/f_Nyquist_sci); % compute the integer ratio of the two frequencies.
+alias_sci_M2 = f_M2 - floor(f_M2/f_Nyquist_sci)*f_Nyquist_sci;
 % Note: if M is odd then reset
-if(rem(M_fast,2)~=0) 
-    alias_sci=f_Nyquist_sci-alias_sci; 
+if(rem(M_sci_M2,2)~=0) 
+    alias_sci_M2=f_Nyquist_sci - alias_sci_M2; 
 end
+alias_period_sci_M2 = 1/alias_sci_M2
+
+
+% S1 aliasing in science sampling
+M_sci_S1=floor(f_S1/f_Nyquist_sci); % compute the integer ratio of the two frequencies.
+alias_sci_S1 = f_S1 - floor(f_S1/f_Nyquist_sci)*f_Nyquist_sci;
+% Note: if M is odd then reset
+if(rem(M_sci_S1,2)~=0) 
+    alias_sci_S1=f_Nyquist_sci - alias_sci_S1; 
+end
+alias_period_sci_S1 = 1/alias_sci_S1
+
 %This calculation shows that M is 80 and the tidal energy aliases into a
 % 65.6178 day period (alias_period)
+
 
 %% Frequency-wavenumber spectra
 
