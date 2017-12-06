@@ -17,8 +17,8 @@ valsMLO = textscan(dataMLO, '%f %f', ...
     'delimiter','\t');
 valsLJO = textscan(dataLJO, '%f %f', ...
     'delimiter','\t');
-valsSPO = textscan(dataSPO, '%f %f', ...
-    'delimiter','\t');
+valsSPO = textscan(dataSPO, '%f %f %f', ...
+    'delimiter','\t \t');
 
 fclose(dataMLO);
 fclose(dataLJO);
@@ -32,7 +32,8 @@ MLOyear = valsMLO{1};
 MLOco2 = valsMLO{2};
 
 SPOyear = valsSPO{1};
-SPOco2 = valsSPO{2};
+SPOflag = valsSPO{2};
+SPOco2 = valsSPO{3};
 
 % remove flagged data
 % defunct now that I've chosen data with no NaN's
@@ -47,7 +48,7 @@ for i = 1:length(LJOco2)
     end
 end
 for i = 1:length(SPOco2)
-    if SPOco2(i) == -99.99
+    if SPOflag(i) ~= 0
         SPOco2(i) = nan;
     end
 end
@@ -141,68 +142,22 @@ LJOco2_amp = (abs(LJOco2_5(1:N/2+1,:)).^2)/N;
 LJOco2_amp = LJOco2_amp(2:length(LJOco2_amp),:);
 
 MLOco2_5 = fft(detrend(MLOco2_2));
-MLOco2_amp = 2*(abs(MLOco2_5(1:N/2+1,:)).^2)/N;
+MLOco2_amp = (abs(MLOco2_5(1:N/2+1,:)).^2)/N;
 MLOco2_amp = MLOco2_amp(2:length(MLOco2_amp),:); % dump the mean
 
 SPOco2_5 = fft(detrend(SPOco2_2));
-SPOco2_amp = 2*(abs(SPOco2_5(1:N/2+1,:)).^2)/N;
+SPOco2_amp = (abs(SPOco2_5(1:N/2+1,:)).^2)/N;
 SPOco2_amp = SPOco2_amp(2:length(SPOco2_amp),:); % dump the mean
 
 frequency=(1:N/2)/(N/12);
 
-%cxy=conj(MLOco2_5(2:end/2)).*SPOco2_5(2:end/2)/N;
-cxy=2*conj(MLOco2_5(1:N/2+1,:)).*SPOco2_5(1:N/2+1,:)/N;
-cxy = cxy(2:length(cxy),:);
-%cxy(1:end)=2*cxy(1:end);
-C=abs(cxy)./sqrt(MLOco2_amp.*SPOco2_amp);
-plot(C)
-
-% plot timeseries
-
-
-% plot spectra
-% much smaller seasonal cycle in south pole because lack of biology
-figure
-plot(LJOyear,LJOco2, '-r', MLOyear,MLOco2,'-b',SPOyear,SPOco2,'-g');
-xlabel('\fontsize{14}year')
-ylabel('\fontsize{14}ppm')
-
-% uncertainty estimate
-nu = 2*1; % DOF = 2*number of segments
-% do I need to segment?
-err_high_MLO = nu/chi2inv(0.05/2,nu);
-err_low_MLO = nu/chi2inv(1-0.05/2,nu);
-ratio_chi2_MLO = err_high_MLO/err_low_MLO;
-
 % see harmonics on the annual cycle
 figure
-loglog(frequency,LJOco2_amp, '-r', frequency, MLOco2_amp, '-b',[.1 .1],[err_low_MLO err_high_MLO]*MLOco2_amp(100), frequency, SPOco2_amp, '-g')
+loglog(frequency,LJOco2_amp, '-r', frequency, MLOco2_amp, '-b', frequency, SPOco2_amp, '-g')
 xlabel('\fontsize{14}cycles per year')
-ylabel('\fontsize{14}ppm^2/cpy')
+ylabel('\fontsize{14}units')
 title('\fontsize{16}Spectrum of Mauna Loa and La Jolla CO2 records')
 legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole Observatory');
 
-
-
 %% compute coherence
 
-% cxy=conj(MLOco2_amp(1:end/2)).*SPOco2_amp(1:end/2); 
-% cxy(2:end)=2*cxy(2:end);
-% C=abs(cxy)./sqrt(MLOco2_amp.*SPOco2_amp); % matrix dims must agree
-% plot(C)
-
-
-% 
-% % cab is covariance between a and b
-% alpha = .05;
-% nd=10; % # of segments
-% p=1-alpha;
-% delta_phase2 = sqrt((1-cab.?2)./(abs(cab).?2*2*nd));
-
-% should I segment?
-% making sense of axes in coherence
-% annie's ADCP: depth integrate or at one depth? - can do either
-% should I expect coherence to be 1 everywhere because I didn't segment?
-
-% TODO: segment my monthly data
-% try this out for daily measurements to see if can get time lag
