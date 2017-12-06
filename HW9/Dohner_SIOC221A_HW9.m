@@ -59,6 +59,12 @@ MLOco2 = inpaint_nans(MLOco2);
 LJOco2 = inpaint_nans(LJOco2);
 SPOco2 = inpaint_nans(SPOco2);
 
+% plot timeseries
+figure
+plot(LJOyear,LJOco2, '-r', MLOyear,MLOco2,'-b',SPOyear,SPOco2,'-g');
+xlabel('\fontsize{14}year')
+ylabel('\fontsize{14}ppm')
+
 % inspect time spacing between measurements
 MLO_t_diff = diff(MLOyear);
 LJO_t_diff = diff(LJOyear);
@@ -149,34 +155,41 @@ SPOco2_mean = mean(SPOco2_amp,2); % take the mean across rows
 frequency=(1:M)/(segmentLength/12);
 frequency = frequency';
 
+% plot spectra
+% uncertainty estimate
+nu = 2*1; % DOF = 2*number of segments
+% do I need to segment?
+err_high_MLO = nu/chi2inv(0.05/2,nu);
+err_low_MLO = nu/chi2inv(1-0.05/2,nu);
+ratio_chi2_MLO = err_high_MLO/err_low_MLO;
+
+% see harmonics on the annual cycle
+
 figure('name','spectra with 3 segments, 50% overlap');
-loglog(frequency,LJOco2_mean, '-r', frequency, MLOco2_mean, '-b',frequency, SPOco2_mean, '-g')
+loglog(frequency,LJOco2_mean, '-r', frequency, MLOco2_mean, '-b',[.1 .1],[err_low_MLO err_high_MLO]*MLOco2_amp(100),frequency, SPOco2_mean, '-g')
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}ppm^2/cpy')
 title('\fontsize{16}Spectrum of Mauna Loa and La Jolla CO2 records')
 legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole Observatory');
 
 
+%% compute coherence
 
-
-% dataLength = length(LJOco2_2);
-% M = 2; % number of segments splitting data into
-% N = dataLength/M; % length of each chunk of data (aka segment length)
-% compute coherence
-
-% no segmenting - this workds
-% cxy=2*conj(MLOco2_ft(1:N/2+1,:)).*SPOco2_ft(1:N/2+1,:)/N;
+cxy = 2*conj(MLOco2_ft(1:M+1,:)).*SPOco2_ft(1:M+1,:)/segmentLength;
+cxy = cxy(2:length(cxy),:);
+C = abs(cxy)./sqrt(MLOco2_amp.*SPOco2_amp); % comparing new method to old
+plot(C);
 % cxy = cxy(2:length(cxy),:);
 % C=abs(cxy)./sqrt(MLOco2_amp.*SPOco2_amp);
 % plot(C)
 
-cxy=sum(MLOco2_ft(2:M+1,:).*conj(SPOco2_ft(2:M+1,:)),2)/segmentLength;
-cxy(2:end)=cxy(2:end)*2; % since we multiplied the spectra by 2,
-% we also need to multiply the cospectrum by 2
-C=abs(cxy)./sqrt(MLOco2_mean.*SPOco2_mean);
-phase_C = atan2(-imag(cxy),real(cxy));
-figure
-plot(C);
+% compute cross-spectrum
+% cxy=sum(MLOco2_ft(2:M+1,:).*conj(SPOco2_ft(2:M+1,:)),2)/segmentLength;
+% cxy(2:end)=cxy(2:end)*2; % multiply cospectrum by 2 (bc multiplied spec *2)
+% C=abs(cxy)./sqrt(MLOco2_mean.*SPOco2_mean);
+% phase_C = atan2(-imag(cxy),real(cxy));
+% figure
+% plot(C);
 
 % segment_length=500;
 % N=length(x);
@@ -202,33 +215,6 @@ plot(C);
 % frequency = frequency';
 
 %cxy=conj(MLOco2_ft(2:end/2)).*SPOco2_ft(2:end/2)/N;
-
-
-%% plot timeseries, spectra
-
-
-% plot spectra
-% much smaller seasonal cycle in south pole because lack of biology
-figure
-plot(LJOyear,LJOco2, '-r', MLOyear,MLOco2,'-b',SPOyear,SPOco2,'-g');
-xlabel('\fontsize{14}year')
-ylabel('\fontsize{14}ppm')
-
-% uncertainty estimate
-nu = 2*1; % DOF = 2*number of segments
-% do I need to segment?
-err_high_MLO = nu/chi2inv(0.05/2,nu);
-err_low_MLO = nu/chi2inv(1-0.05/2,nu);
-ratio_chi2_MLO = err_high_MLO/err_low_MLO;
-
-% see harmonics on the annual cycle
-figure
-loglog(frequency,LJOco2_mean, '-r', frequency, MLOco2_mean, '-b',[.1 .1],[err_low_MLO err_high_MLO]*MLOco2_amp(100), frequency, SPOco2_mean, '-g')
-xlabel('\fontsize{14}cycles per year')
-ylabel('\fontsize{14}ppm^2/cpy')
-title('\fontsize{16}Spectrum of Mauna Loa and La Jolla CO2 records')
-legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole Observatory');
-
 
 
 %% compute coherence
