@@ -178,7 +178,7 @@ ccLM(2:end)=ccLM(2:end)*2;
 % compute coherence
 C_LM=abs(ccLM)./sqrt(LJO_spec.*MLO_spec);
 phase_LM = atan2(-imag(ccLM),real(ccLM));
-deltaPhase_LM = sqrt((1-ccLM.^2)./(abs(ccLM).^2*2*Nseg)); % Question: having issues with deltaPhase, plotting
+deltaPhase_LM = sqrt((1-C_LM.^2)./(abs(C_LM).^2*2*Nseg)); 
 
 % compute cross covariance of MLO/SPO
 ccMS=sum(MLO_ft(1:M+1,:).*conj(SPO_ft(1:M+1,:)),2)/N;
@@ -186,7 +186,7 @@ ccMS(2:end)=ccMS(2:end)*2;
 % compute coherence
 C_MS=abs(ccMS)./sqrt(MLO_spec.*SPO_spec);
 phase_MS = atan2(-imag(ccMS),real(ccMS));
-deltaPhase_MS = sqrt((1-ccMS.^2)./(abs(ccMS).^2*2*Nseg));
+deltaPhase_MS = sqrt((1-C_MS.^2)./(abs(C_MS).^2*2*Nseg));
 
 %% uncertainty estimate 
 
@@ -194,24 +194,40 @@ alpha = 0.05; % 95% confidence level
 gamma_threshold= sqrt(1-alpha^(1/(Nseg-1)));
 
 
-
 %% plot the coherence
 
 figure('name','Coherence Plots of CO2 Records');
 subplot(2,1,1)
-plot(frequency, C_LM);
+plot(frequency, C_LM,[frequency(1) frequency(end)],[gamma_threshold gamma_threshold]);
+axis tight;
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}coherence')
 title('\fontsize{16}Coherence of CO2 Records (LJO and MLO)')
-legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station','Location','northeast');
-
+legend('\fontsize{12}La Jolla vs. Mauna Loa','Uncertainty Threshold','Location','northeast');
 
 subplot(2,1,2)
-plot(frequency, C_MS,[0.1 0.6],[gamma_threshold gamma_threshold]); %, frequency,[phase_MS phase_MS+delta_phase_MS phase_MS-delta_phase_MS]);
+plot(frequency, C_MS,[frequency(1) frequency(end)],[gamma_threshold gamma_threshold]); 
+axis tight
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}coherence')
 title('\fontsize{16}Coherence of CO2 Records (MLO and SPO)')
-legend('\fontsize{12}Mauna Loa Station','\fontsize{12}South Pole Observatory','Location','northeast');
-% Question: having trouble working with delta phase
+legend('\fontsize{12}Mauna Loa vs. South Pole Observatory','Location','northeast');
 
+% Question: is this threshold right? seems really high... but I suppose it's that 5%
+% of the data will be above the threshold just due to random chance, so it should be
+% high?
+% "set a threshold for evaluating whether a calculated coherence exceeds 
+% what we might expect from random white noise"
 
+%% plot the phase
+
+% Question: I'm having a hard time understanding this plot (read Lec 15
+% Notes)
+% Question: what are the units on the y axis? (again, read lec 15 notes)
+figure('name','Phase Plot for Mauna Loa and South Pole Coherence');
+semilogx(frequency,[phase_MS phase_MS+deltaPhase_MS phase_MS-deltaPhase_MS])
+xlabel('\fontsize{14}cycles per year')
+ylabel('\fontsize{14}phase units')
+title('\fontsize{16}Phase Plot for Mauna Loa and South Pole Coherence')
+legend('\fontsize{12}phase', 'phase+delta_phase','phase-delta_phase','Location','northeast');
+axis tight
