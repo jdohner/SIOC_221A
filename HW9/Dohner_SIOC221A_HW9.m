@@ -116,7 +116,7 @@ plot(LJOyear_2,LJOco2_2, '-r', MLOyear_2,MLOco2_2,'-b',SPOyear_2,SPOco2_2,'-g');
 xlabel('\fontsize{14}year')
 ylabel('\fontsize{14}ppm')
 title('\fontsize{16}Atmospheric CO2 Records')
-legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole Observatory','Location','northwest');
+legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa', '\fontsize{12}South Pole','Location','northwest');
 
 
 %% compute spectra (from in-class coherence example)
@@ -168,7 +168,7 @@ loglog(frequency,LJO_spec, '-r', [.2 .2],[err_low err_high]*LJO_spec(100), ...
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}ppm^2/cpy')
 title('\fontsize{16}Power Spectra of CO2 Records')
-legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole Observatory','Location','northeast');
+legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole','Location','northeast');
 
 %% compute coherence
 
@@ -203,7 +203,7 @@ axis tight;
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}coherence')
 title('\fontsize{16}Coherence of CO2 Records (LJO and MLO)')
-legend('\fontsize{12}La Jolla vs. Mauna Loa','Uncertainty Threshold','Location','northeast');
+legend('\fontsize{12}La Jolla vs. Mauna Loa','\fontsize{12}Uncertainty Threshold','Location','southeast');
 
 subplot(2,1,2)
 plot(frequency, C_MS,[frequency(1) frequency(end)],[gamma_threshold gamma_threshold]); 
@@ -211,7 +211,7 @@ axis tight
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}coherence')
 title('\fontsize{16}Coherence of CO2 Records (MLO and SPO)')
-legend('\fontsize{12}Mauna Loa vs. South Pole Observatory','Location','northeast');
+legend('\fontsize{12}Mauna Loa vs. South Pole','\fontsize{12}Uncertainty Threshold','Location','southeast');
 
 % Question: is this threshold right? seems really high... but I suppose it's that 5%
 % of the data will be above the threshold just due to random chance, so it should be
@@ -225,9 +225,9 @@ legend('\fontsize{12}Mauna Loa vs. South Pole Observatory','Location','northeast
 % Notes)
 % Question: what are the units on the y axis? (again, read lec 15 notes)
 figure('name','Phase Plot for Mauna Loa and South Pole Coherence');
-semilogx(frequency,[phase_MS phase_MS+deltaPhase_MS phase_MS-deltaPhase_MS])
+semilogx(frequency,[phase_MS phase_MS+deltaPhase_MS phase_MS-deltaPhase_MS]);
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}phase units')
 title('\fontsize{16}Phase Plot for Mauna Loa and South Pole Coherence')
-legend('\fontsize{12}phase', 'phase+delta_phase','phase-delta_phase','Location','northeast');
+legend('\fontsize{12}phase', 'phase+delta phase','phase-delta phase','Location','northeast');
 axis tight
