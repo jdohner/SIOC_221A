@@ -11,9 +11,9 @@ clear all; close all;
 
 %% load CO2 data - daily
 
-% dataMLO = fopen('daily_data/daily_flask_co2_mlo_JLD.txt');
-% dataLJO = fopen('daily_data/daily_flask_co2_ljo_JLD.txt');
-% dataSPO = fopen('daily_data/daily_flask_co2_spo_JLD.txt');
+dataMLO = fopen('daily_data/daily_flask_co2_mlo_JLD.txt');
+dataLJO = fopen('daily_data/daily_flask_co2_ljo_JLD.txt');
+dataSPO = fopen('daily_data/daily_flask_co2_spo_JLD.txt');
 
 valsMLO = textscan(dataMLO, '%f %f %f', ...
     'delimiter','\t');
@@ -166,9 +166,9 @@ startIndex_LJO = find(floor(LJOyear) == startYear, 1);
 startIndex_MLO = find(floor(MLOyear) == startYear,1);
 startIndex_SPO = find(floor(SPOyear) == startYear,1);
 % use next 1,000 datapoints
-endIndex_LJO = startIndex_LJO+778;
-endIndex_MLO = startIndex_MLO+778;
-endIndex_SPO = startIndex_SPO+778;
+endIndex_LJO = startIndex_LJO+775;
+endIndex_MLO = startIndex_MLO+775;
+endIndex_SPO = startIndex_SPO+775;
 
 
 
@@ -193,7 +193,7 @@ legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa', '\fontsize{12}S
 %% compute spectra (from in-class coherence example)
 
 N = length(LJOco2_2);
-Nseg = 6; % number of segments splitting data into
+Nseg = 8; % number of segments splitting data into
 segment_length = N/Nseg; % length of each chunk of data (aka segment length)
 M = segment_length/2;
 %Nseg = N/segment_length; % number of segments splitting data into

@@ -4,50 +4,67 @@
 %
 % due date December 13, 2017
 
-% analysis of daily flask-collected co2 data at Mauna Loa and Point Barrow
+% analysis of monthly flask-collected co2 data at Mauna Loa and La Jolla
 % stations
-% from 1961-1963.74, 1965.45-1967.7 (avoiding gaps in PTB data)
-%
 
 clear all; close all;
 
 %% load CO2 data - daily
 
-dataMLO = fopen('daily_data/daily_in_situ_co2_mlo_JLD.txt');
-dataPTB = fopen('daily_data/daily_in_situ_co2_ptb_JLD.txt');
+dataMLO = fopen('daily_data/daily_flask_co2_mlo_JLD.txt');
+dataLJO = fopen('daily_data/daily_flask_co2_ljo_JLD.txt');
+% dataSPO = fopen('daily_data/daily_flask_co2_spo_JLD.txt');
 
-valsMLO = textscan(dataMLO, '%f %f', ...
+valsMLO = textscan(dataMLO, '%f %f %f', ...
     'delimiter','\t');
-valsPTB = textscan(dataPTB, '%f %f %f', ...
+valsLJO = textscan(dataLJO, '%f %f %f', ...
     'delimiter','\t');
+% valsSPO = textscan(dataSPO, '%f %f %f', ...
+%     'delimiter','\t');
 
 fclose(dataMLO);
-fclose(dataPTB);
-
+fclose(dataLJO);
+%fclose(dataSPO);
 
 % format of .txt files is year, co2 value
-MLOyear = valsMLO{1};
-MLOco2 = valsMLO{2};
+LJOyear = valsLJO{1};
+LJOflag = valsLJO{2};
+LJOco2 = valsLJO{3};
 
-PTByear = valsPTB{1};
-PTBflag = valsPTB{2};
-PTBco2 = valsPTB{3};
+MLOyear = valsMLO{1};
+MLOflag = valsMLO{2};
+MLOco2 = valsMLO{3};
+
+% SPOyear = valsSPO{1};
+% SPOflag = valsSPO{2};
+% SPOco2 = valsSPO{3};
 
 % remove flagged data
-for i = 1:length(PTBco2)
-    if PTBflag(i) ~= 0
-        PTBco2(i) = nan;
+for i = 1:length(MLOco2)
+    if MLOflag(i) ~= 0
+        MLOco2(i) = nan;
     end
 end
-
+for i = 1:length(LJOco2)
+    if LJOflag(i) ~= 0
+        LJOco2(i) = nan;
+    end
+end
+for i = 1:length(SPOco2)
+    if SPOflag(i) ~= 0
+        SPOco2(i) = nan;
+    end
+end
 
 % remove nan's
 % TODO: if time, go back and change this to a linear interpolation
 addpath('/Users/juliadohner/Documents/MATLAB/SIOC_221A/HW9/Inpaint_nans/Inpaint_nans');
 MLOyear = inpaint_nans(MLOyear);
 MLOco2 = inpaint_nans(MLOco2);
-PTByear = inpaint_nans(PTByear);
-PTBco2 = inpaint_nans(PTBco2);
+LJOyear = inpaint_nans(LJOyear);
+LJOco2 = inpaint_nans(LJOco2);
+SPOyear = inpaint_nans(SPOyear);
+SPOco2 = inpaint_nans(SPOco2);
 
 
 %% load CO2 data - monthly
@@ -106,7 +123,7 @@ PTBco2 = inpaint_nans(PTBco2);
 
 % inspect time spacing between measurements
 MLO_t_diff = diff(MLOyear);
-LJO_t_diff = diff(PTByear);
+LJO_t_diff = diff(LJOyear);
 SPO_t_diff = diff(SPOyear);
 
 % figure
@@ -145,19 +162,19 @@ maxDiffSPO = max(SPO_t_diff);
 
 startYear = 1985; % looks like resolution improves in LJO after 1985
 endYear = 2016;
-startIndex_LJO = find(floor(PTByear) == startYear, 1);
+startIndex_LJO = find(floor(LJOyear) == startYear, 1);
 startIndex_MLO = find(floor(MLOyear) == startYear,1);
 startIndex_SPO = find(floor(SPOyear) == startYear,1);
 % use next 1,000 datapoints
-endIndex_LJO = find(floor(PTByear) == endYear,1);
-endIndex_MLO = find(floor(MLOyear) == endYear,1);
-endIndex_SPO = find(floor(SPOyear) == endYear,1);
+endIndex_LJO = startIndex_LJO+778;
+endIndex_MLO = startIndex_MLO+778;
+endIndex_SPO = startIndex_SPO+778;
 
 
 
 % create new vectors
-LJOco2_2 = PTBco2(startIndex_LJO:endIndex_LJO);
-LJOyear_2 = PTByear(startIndex_LJO:endIndex_LJO);
+LJOco2_2 = LJOco2(startIndex_LJO:endIndex_LJO);
+LJOyear_2 = LJOyear(startIndex_LJO:endIndex_LJO);
 MLOco2_2 = MLOco2(startIndex_MLO:endIndex_MLO);
 MLOyear_2 = MLOyear(startIndex_MLO:endIndex_MLO);
 SPOco2_2 = SPOco2(startIndex_SPO:endIndex_SPO);
