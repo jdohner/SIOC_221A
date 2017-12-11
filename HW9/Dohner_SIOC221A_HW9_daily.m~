@@ -93,8 +93,8 @@ startYear1 = 1962.12; % looks like resolution improves in LJO after 1985
 endYear1 = 1963.74;
 startIndex1_PTB = find(floor(PTByear*100) == startYear1*100, 1);
 startIndex1_MLO = find(floor(MLOyear*100) == startYear1*100,1);
-% endIndex1_PTB = find(floor(PTByear*100) == endYear1*100,1);
-% endIndex1_MLO = find(floor(MLOyear*100) == endYear1*100,1);
+endIndex1_PTB = find(floor(PTByear*100) == endYear1*100,1);
+endIndex1_MLO = find(floor(MLOyear*100) == endYear1*100,1);
 
 startYear2 = 1966.49;
 endYear2 = 1967.70;
@@ -103,39 +103,15 @@ startIndex2_MLO = find(floor(MLOyear*100) == startYear2*100,1);
 endIndex2_PTB = find(floor(PTByear*100) == endYear2*100,1);
 endIndex2_MLO = find(floor(MLOyear*100) == endYear2*100,1);
 
-% some data missing, so interpolate to get vectors of same length
-
-dt = 1/365; % daily increment in unit of years
-
-year1 = startYear1:dt:endYear1;
-year2 = startYear2:dt:endYear2;
-PTBco2_1 = interp1(PTByear,PTBco2,year1,'spline');
-MLOco2_1 = interp1(MLOyear,MLOco2,year1,'spline');
-
-PTBco2_2 = interp1(PTByear,PTBco2,year2,'spline');
-MLOco2_2 = interp1(MLOyear,MLOco2,year2,'spline');
-
-
-
-
-% PTBco2_firstHalf = PTBco2(startIndex1_PTB:endIndex1_PTB);
-% PTByear_firstHalf = PTByear(startIndex1_PTB:endIndex1_PTB);
-% MLOco2_firstHalf = MLOco2(startIndex1_MLO:endIndex1_MLO);
-% MLOyear_firstHalf = MLOyear(startIndex1_MLO:endIndex1_MLO);
-% 
-% PTBco2_secondHalf = PTBco2(startIndex2_PTB:endIndex2_PTB);
-% PTByear_secondHalf = PTByear(startIndex2_PTB:endIndex2_PTB);
-% MLOco2_secondHalf = MLOco2(startIndex2_MLO:endIndex2_MLO);
-% MLOyear_secondHalf = MLOyear(startIndex2_MLO:endIndex2_MLO);
-% 
-% PTBco2_2 = vertcat(PTBco2_firstHalf,PTBco2_secondHalf);
-% PTByear_2 = vertcat(PTByear_firstHalf,PTByear_secondHalf);
-% MLOco2_2 = vertcat(MLOco2_firstHalf, MLOco2_secondHalf);
-% MLOyear_2 = vertcat(MLOyear_firstHalf, MLOyear_secondHalf);
+% create new vectors
+PTBco2_2 = vertcat(PTBco2(startIndex1_PTB:endIndex1_PTB),PTBco2(startIndex2_PTB:endIndex2_PTB));
+PTByear_2 = vertcat(PTByear(startIndex1_PTB:endIndex1_PTB),PTByear(startIndex2_PTB:endIndex2_PTB));
+MLOco2_2 = vertcat(MLOco2(startIndex1_MLO:endIndex1_MLO),MLOco2(startIndex2_MLO:endIndex2_MLO));
+MLOyear_2 = vertcat(MLOyear(startIndex1_MLO:endIndex1_MLO),MLOyear(startIndex2_MLO:endIndex2_MLO));
 
 % plot timeseries
 figure('name','Atmospheric CO2 Timeseries');
-plot(year1,PTBco2_1, '-r', year1,MLOco2_1,'-b', year2,PTBco2_2,'-r',year2,MLOco2_2,'-b');
+plot(PTByear_2,PTBco2_2, '-r', MLOyear_2,MLOco2_2,'-b');
 xlabel('\fontsize{14}year')
 ylabel('\fontsize{14}ppm')
 title('\fontsize{16}Atmospheric CO2 Records')
@@ -145,12 +121,12 @@ legend('\fontsize{12}Point Barrow','\fontsize{12}Mauna Loa', 'Location','northwe
 %% compute spectra (from in-class coherence example)
 
 % cut records down by two to make more easily divisible into segments
-length_1 = floor(length(MLOco2_1)/44)*44;
-length_2 = floor(length(MLOco2_2)/44)*44;
+
+
 
 N = length(PTBco2_2);
-segment_length = 44; % length of each chunk of data (aka segment length)
-Nseg = N/segment_length; % number of segments splitting data into
+Nseg = 6; % number of segments splitting data into
+segment_length = N/Nseg; % length of each chunk of data (aka segment length)
 M = segment_length/2;
 %Nseg = N/segment_length; % number of segments splitting data into
 
