@@ -144,15 +144,27 @@ legend('\fontsize{12}Point Barrow','\fontsize{12}Mauna Loa', 'Location','northwe
 
 %% compute spectra (from in-class coherence example)
 
-% cut records down by two to make more easily divisible into segments
-length_1 = floor(length(MLOco2_1)/44)*44;
-length_2 = floor(length(MLOco2_2)/44)*44;
-
-N = length(PTBco2_2);
 segment_length = 44; % length of each chunk of data (aka segment length)
-Nseg = N/segment_length; % number of segments splitting data into
+
+% cut records down by two to make more easily divisible into segments
+length_1 = floor(length(MLOco2_1)/segment_length)*segment_length;
+length_2 = floor(length(MLOco2_2)/segment_length)*segment_length;
+
+year1 = year1(1:length_1);
+MLOco2_1 = MLOco2_1(1:length_1);
+PTBco2_1 = PTBco2_1(1:length_1);
+
+year2 = year2(1:length_2);
+MLOco2_2 = MLOco2_2(1:length_2);
+PTBco2_2 = PTBco2_2(1:length_2);
+
+N1 = length_1;
+Nseg1 = N1/segment_length; % number of segments splitting data into
+N2 = length_2;
+Nseg2 = N2/segment_length;
 M = segment_length/2;
-%Nseg = N/segment_length; % number of segments splitting data into
+
+Nseg = Nseg1 + Nseg2;
 
 % using three segments with 50% overlap (concatenating in lines below)
 % LJO_use=[reshape(LJOco2_2,segment_length,Nseg) reshape(LJOco2_2(M+1:end-M),segment_length,Nseg-1)];
@@ -160,26 +172,28 @@ M = segment_length/2;
 % SPO_use=[reshape(SPOco2_2,segment_length,Nseg) reshape(SPOco2_2(M+1:end-M),segment_length,Nseg-1)];
 
 % changing to non-overlapping so can fiddle with number of segments:
-LJO_use=reshape(PTBco2_2,segment_length,Nseg);
-MLO_use=reshape(MLOco2_2,segment_length,Nseg);
-SPO_use=reshape(SPOco2_2,segment_length,Nseg);
+PTB_use1=reshape(PTBco2_1,segment_length,Nseg1);
+PTB_use2=reshape(PTBco2_2,segment_length,Nseg2);
+MLO_use1=reshape(MLOco2_1,segment_length,Nseg1);
+MLO_use2=reshape(MLOco2_2,segment_length,Nseg2);
 
+% take fft of first and second bits of data
+PTB_ft1=fft(detrend(PTB_use1).*(hann(segment_length)*ones(1,Nseg1)));
+PTB_ft2=fft(detrend(PTB_use2).*(hann(segment_length)*ones(1,Nseg2)));
 
+MLO_ft1=fft(detrend(MLO_use1).*(hann(segment_length)*ones(1,Nseg1)));
+MLO_ft2=fft(detrend(MLO_use2).*(hann(segment_length)*ones(1,Nseg2)));
 
-
-LJO_ft=fft(detrend(LJO_use).*(hann(segment_length)*ones(1,Nseg)));
-MLO_ft=fft(detrend(MLO_use).*(hann(segment_length)*ones(1,Nseg)));
-SPO_ft=fft(detrend(SPO_use).*(hann(segment_length)*ones(1,Nseg)));
+PTB_ft = [PTB_ft1 PTB_ft2];
+MLO_ft = [MLO_ft1 MLO_ft2];
 
 % question: mean is still in here. Do I want it?
-LJO_spec=sum(abs(LJO_ft(1:M+1,:)).^2,2)/N; % sum over all spectra (2nd dim)
-LJO_spec(2:end)=LJO_spec(2:end)*2; % multiply by 2 to make up for lost energy
+PTB_spec=sum(abs(PTB_ft(1:M+1,:)).^2,2)/N1; % sum over all spectra (2nd dim)
+PTB_spec(2:end)=PTB_spec(2:end)*2; % multiply by 2 to make up for lost energy
 
-MLO_spec=sum(abs(MLO_ft(1:M+1,:)).^2,2)/N;
+MLO_spec=sum(abs(MLO_ft(1:M+1,:)).^2,2)/N1;
 MLO_spec(2:end)=MLO_spec(2:end)*2;
 
-SPO_spec=sum(abs(SPO_ft(1:M+1,:)).^2,2)/N;
-SPO_spec(2:end)=SPO_spec(2:end)*2;
 
 %% uncertainty estimate on spectra
 
@@ -198,36 +212,35 @@ frequency = frequency';
 
 figure('name','Power Spectra of CO2 Records');
 % TODO: fix the locations of the uncertainty estimates
-loglog(frequency,LJO_spec, '-r', [.2 .2],[err_low err_high]*LJO_spec(10), ...
-    frequency, MLO_spec, '-b',[.1 .1],[err_low err_high]*MLO_spec(10), ...
-    frequency, SPO_spec, '-g',[.3 .3],[err_low err_high]*SPO_spec(10))
+loglog(frequency,PTB_spec, '-r', [.2 .2],[err_low err_high]*PTB_spec(10), ...
+    frequency, MLO_spec, '-b',[.1 .1],[err_low err_high]*MLO_spec(10))
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}ppm^2/cpy')
 title('\fontsize{16}Power Spectra of CO2 Records')
-legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole','Location','northeast');
+legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', 'Location','northeast');
 
 %% compute coherence
 
-% compute cross covariance of LJO/MLO
-ccLM=sum(LJO_ft(1:M+1,:).*conj(MLO_ft(1:M+1,:)),2)/N;
+% compute cross covariance of PTB/MLO
+ccLM=sum(PTB_ft(1:M+1,:).*conj(MLO_ft(1:M+1,:)),2)/N1;
 ccLM(2:end)=ccLM(2:end)*2;
 % compute coherence
-C_LM=abs(ccLM)./sqrt(LJO_spec.*MLO_spec);
+C_LM=abs(ccLM)./sqrt(PTB_spec.*MLO_spec);
 phase_LM = atan2(-imag(ccLM),real(ccLM));
-deltaPhase_LM = sqrt((1-C_LM.^2)./(abs(C_LM).^2*2*Nseg)); 
+deltaPhase_LM = sqrt((1-C_LM.^2)./(abs(C_LM).^2*2*Nseg1)); 
 
-% compute cross covariance of MLO/SPO
-ccMS=sum(MLO_ft(1:M+1,:).*conj(SPO_ft(1:M+1,:)),2)/N;
-ccMS(2:end)=ccMS(2:end)*2;
-% compute coherence
-C_MS=abs(ccMS)./sqrt(MLO_spec.*SPO_spec);
-phase_MS = atan2(-imag(ccMS),real(ccMS));
-deltaPhase_MS = sqrt((1-C_MS.^2)./(abs(C_MS).^2*2*Nseg));
+% % compute cross covariance of MLO/SPO
+% ccMS=sum(MLO_ft(1:M+1,:).*conj(SPO_ft(1:M+1,:)),2)/N1;
+% ccMS(2:end)=ccMS(2:end)*2;
+% % compute coherence
+% C_MS=abs(ccMS)./sqrt(MLO_spec.*SPO_spec);
+% phase_MS = atan2(-imag(ccMS),real(ccMS));
+% deltaPhase_MS = sqrt((1-C_MS.^2)./(abs(C_MS).^2*2*Nseg1));
 
 %% uncertainty estimate 
 
 alpha = 0.05; % 95% confidence level
-gamma_threshold= sqrt(1-alpha^(1/(Nseg-1)));
+gamma_threshold= sqrt(1-alpha^(1/(Nseg1-1)));
 
 
 %% plot the coherence

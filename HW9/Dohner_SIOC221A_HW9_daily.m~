@@ -93,8 +93,8 @@ startYear1 = 1962.12; % looks like resolution improves in LJO after 1985
 endYear1 = 1963.74;
 startIndex1_PTB = find(floor(PTByear*100) == startYear1*100, 1);
 startIndex1_MLO = find(floor(MLOyear*100) == startYear1*100,1);
-endIndex1_PTB = find(floor(PTByear*100) == endYear1*100,1);
-endIndex1_MLO = find(floor(MLOyear*100) == endYear1*100,1);
+% endIndex1_PTB = find(floor(PTByear*100) == endYear1*100,1);
+% endIndex1_MLO = find(floor(MLOyear*100) == endYear1*100,1);
 
 startYear2 = 1966.49;
 endYear2 = 1967.70;
@@ -103,15 +103,39 @@ startIndex2_MLO = find(floor(MLOyear*100) == startYear2*100,1);
 endIndex2_PTB = find(floor(PTByear*100) == endYear2*100,1);
 endIndex2_MLO = find(floor(MLOyear*100) == endYear2*100,1);
 
-% create new vectors
-PTBco2_2 = vertcat(PTBco2(startIndex1_PTB:endIndex1_PTB),PTBco2(startIndex2_PTB:endIndex2_PTB));
-PTByear_2 = vertcat(PTByear(startIndex1_PTB:endIndex1_PTB),PTByear(startIndex2_PTB:endIndex2_PTB));
-MLOco2_2 = vertcat(MLOco2(startIndex1_MLO:endIndex1_MLO),MLOco2(startIndex2_MLO:endIndex2_MLO));
-MLOyear_2 = vertcat(MLOyear(startIndex1_MLO:endIndex1_MLO),MLOyear(startIndex2_MLO:endIndex2_MLO));
+% some data missing, so interpolate to get vectors of same length
+
+dt = 1/365; % daily increment in unit of years
+
+year1 = startYear1:dt:endYear1;
+year2 = startYear2:dt:endYear2;
+PTBco2_1 = interp1(PTByear,PTBco2,year1,'spline');
+MLOco2_1 = interp1(MLOyear,MLOco2,year1,'spline');
+
+PTBco2_2 = interp1(PTByear,PTBco2,year2,'spline');
+MLOco2_2 = interp1(MLOyear,MLOco2,year2,'spline');
+
+
+
+
+% PTBco2_firstHalf = PTBco2(startIndex1_PTB:endIndex1_PTB);
+% PTByear_firstHalf = PTByear(startIndex1_PTB:endIndex1_PTB);
+% MLOco2_firstHalf = MLOco2(startIndex1_MLO:endIndex1_MLO);
+% MLOyear_firstHalf = MLOyear(startIndex1_MLO:endIndex1_MLO);
+% 
+% PTBco2_secondHalf = PTBco2(startIndex2_PTB:endIndex2_PTB);
+% PTByear_secondHalf = PTByear(startIndex2_PTB:endIndex2_PTB);
+% MLOco2_secondHalf = MLOco2(startIndex2_MLO:endIndex2_MLO);
+% MLOyear_secondHalf = MLOyear(startIndex2_MLO:endIndex2_MLO);
+% 
+% PTBco2_2 = vertcat(PTBco2_firstHalf,PTBco2_secondHalf);
+% PTByear_2 = vertcat(PTByear_firstHalf,PTByear_secondHalf);
+% MLOco2_2 = vertcat(MLOco2_firstHalf, MLOco2_secondHalf);
+% MLOyear_2 = vertcat(MLOyear_firstHalf, MLOyear_secondHalf);
 
 % plot timeseries
 figure('name','Atmospheric CO2 Timeseries');
-plot(PTByear_2,PTBco2_2, '-r', MLOyear_2,MLOco2_2,'-b');
+plot(year1,PTBco2_1, '-r', year1,MLOco2_1,'-b', year2,PTBco2_2,'-r',year2,MLOco2_2,'-b');
 xlabel('\fontsize{14}year')
 ylabel('\fontsize{14}ppm')
 title('\fontsize{16}Atmospheric CO2 Records')
@@ -120,15 +144,25 @@ legend('\fontsize{12}Point Barrow','\fontsize{12}Mauna Loa', 'Location','northwe
 
 %% compute spectra (from in-class coherence example)
 
+segment_length = 44; % length of each chunk of data (aka segment length)
+
 % cut records down by two to make more easily divisible into segments
+length_1 = floor(length(MLOco2_1)/segment_length)*segment_length;
+length_2 = floor(length(MLOco2_2)/segment_length)*segment_length;
 
+year1 = year1(1:length_1);
+MLOco2_1 = MLOco2_1(1:length_1);
+PTBco2_1 = PTBco2_1(1:length_1);
 
+year2 = year2(1:length_2);
+MLOco2_2 = MLOco2_2(1:length_2);
+PTBco2_2 = PTBco2_2(1:length_2);
 
-N = length(PTBco2_2);
-Nseg = 6; % number of segments splitting data into
-segment_length = N/Nseg; % length of each chunk of data (aka segment length)
+N1 = length_1;
+Nseg1 = N1/segment_length; % number of segments splitting data into
+N2 = length_2;
+Nseg2 = N2/segment_length;
 M = segment_length/2;
-%Nseg = N/segment_length; % number of segments splitting data into
 
 % using three segments with 50% overlap (concatenating in lines below)
 % LJO_use=[reshape(LJOco2_2,segment_length,Nseg) reshape(LJOco2_2(M+1:end-M),segment_length,Nseg-1)];
@@ -136,31 +170,33 @@ M = segment_length/2;
 % SPO_use=[reshape(SPOco2_2,segment_length,Nseg) reshape(SPOco2_2(M+1:end-M),segment_length,Nseg-1)];
 
 % changing to non-overlapping so can fiddle with number of segments:
-LJO_use=reshape(PTBco2_2,segment_length,Nseg);
-MLO_use=reshape(MLOco2_2,segment_length,Nseg);
-SPO_use=reshape(SPOco2_2,segment_length,Nseg);
+LJO_use1=reshape(PTBco2_1,segment_length,Nseg1);
+LJO_use2=reshape(PTBco2_2,segment_length,Nseg2);
+MLO_use1=reshape(MLOco2_1,segment_length,Nseg1);
+MLO_use2=reshape(MLOco2_1,segment_length,Nseg1);
 
+% take fft of first and second bits of data
+LJO_ft1=fft(detrend(LJO_use1).*(hann(segment_length)*ones(1,Nseg1)));
+LJO_ft2=fft(detrend(LJO_use2).*(hann(segment_length)*ones(1,Nseg2)));
 
+MLO_ft1=fft(detrend(MLO_use1).*(hann(segment_length)*ones(1,Nseg1)));
+MLO_ft2=fft(detrend(MLO_use2).*(hann(segment_length)*ones(1,Nseg2)));
 
-
-LJO_ft=fft(detrend(LJO_use).*(hann(segment_length)*ones(1,Nseg)));
-MLO_ft=fft(detrend(MLO_use).*(hann(segment_length)*ones(1,Nseg)));
-SPO_ft=fft(detrend(SPO_use).*(hann(segment_length)*ones(1,Nseg)));
 
 % question: mean is still in here. Do I want it?
-LJO_spec=sum(abs(LJO_ft(1:M+1,:)).^2,2)/N; % sum over all spectra (2nd dim)
+LJO_spec=sum(abs(LJO_ft(1:M+1,:)).^2,2)/N1; % sum over all spectra (2nd dim)
 LJO_spec(2:end)=LJO_spec(2:end)*2; % multiply by 2 to make up for lost energy
 
-MLO_spec=sum(abs(MLO_ft(1:M+1,:)).^2,2)/N;
+MLO_spec=sum(abs(MLO_ft(1:M+1,:)).^2,2)/N1;
 MLO_spec(2:end)=MLO_spec(2:end)*2;
 
-SPO_spec=sum(abs(SPO_ft(1:M+1,:)).^2,2)/N;
+SPO_spec=sum(abs(SPO_ft(1:M+1,:)).^2,2)/N1;
 SPO_spec(2:end)=SPO_spec(2:end)*2;
 
 %% uncertainty estimate on spectra
 
 % question: is this nu calculation right??
-nu = 1.9*2*Nseg; % DOF = 2*number of segments*1.9 (1.9 for the Hanning)
+nu = 1.9*2*Nseg1; % DOF = 2*number of segments*1.9 (1.9 for the Hanning)
 err_high = nu/chi2inv(0.05/2,nu);
 err_low = nu/chi2inv(1-0.05/2,nu);
 ratio_chi2 = err_high/err_low;
@@ -185,25 +221,25 @@ legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fonts
 %% compute coherence
 
 % compute cross covariance of LJO/MLO
-ccLM=sum(LJO_ft(1:M+1,:).*conj(MLO_ft(1:M+1,:)),2)/N;
+ccLM=sum(LJO_ft(1:M+1,:).*conj(MLO_ft(1:M+1,:)),2)/N1;
 ccLM(2:end)=ccLM(2:end)*2;
 % compute coherence
 C_LM=abs(ccLM)./sqrt(LJO_spec.*MLO_spec);
 phase_LM = atan2(-imag(ccLM),real(ccLM));
-deltaPhase_LM = sqrt((1-C_LM.^2)./(abs(C_LM).^2*2*Nseg)); 
+deltaPhase_LM = sqrt((1-C_LM.^2)./(abs(C_LM).^2*2*Nseg1)); 
 
 % compute cross covariance of MLO/SPO
-ccMS=sum(MLO_ft(1:M+1,:).*conj(SPO_ft(1:M+1,:)),2)/N;
+ccMS=sum(MLO_ft(1:M+1,:).*conj(SPO_ft(1:M+1,:)),2)/N1;
 ccMS(2:end)=ccMS(2:end)*2;
 % compute coherence
 C_MS=abs(ccMS)./sqrt(MLO_spec.*SPO_spec);
 phase_MS = atan2(-imag(ccMS),real(ccMS));
-deltaPhase_MS = sqrt((1-C_MS.^2)./(abs(C_MS).^2*2*Nseg));
+deltaPhase_MS = sqrt((1-C_MS.^2)./(abs(C_MS).^2*2*Nseg1));
 
 %% uncertainty estimate 
 
 alpha = 0.05; % 95% confidence level
-gamma_threshold= sqrt(1-alpha^(1/(Nseg-1)));
+gamma_threshold= sqrt(1-alpha^(1/(Nseg1-1)));
 
 
 %% plot the coherence
