@@ -4,22 +4,22 @@
 %
 % due date December 13, 2017
 
-% analysis of monthly flask-collected co2 data at Mauna Loa and La Jolla
+% analysis of weekly flask-collected co2 data at Mauna Loa and La Jolla
 % stations
 
 clear all; close all;
 
-%% load CO2 data - daily
+%% load CO2 data
 
-% dataMLO = fopen('daily_data/daily_flask_co2_mlo_JLD.txt');
-% dataLJO = fopen('daily_data/daily_flask_co2_ljo_JLD.txt');
-% dataSPO = fopen('daily_data/daily_flask_co2_spo_JLD.txt');
+dataMLO = fopen('monthly_data/monthly_flask_co2_mlo_JLD.txt');
+dataLJO = fopen('monthly_data/monthly_flask_co2_ljo_JLD.txt');
+dataSPO = fopen('monthly_data/monthly_flask_co2_spo_JLD.txt');
 
-valsMLO = textscan(dataMLO, '%f %f %f', ...
+valsMLO = textscan(dataMLO, '%f %f', ...
     'delimiter','\t');
-valsLJO = textscan(dataLJO, '%f %f %f', ...
+valsLJO = textscan(dataLJO, '%f %f', ...
     'delimiter','\t');
-valsSPO = textscan(dataSPO, '%f %f %f', ...
+valsSPO = textscan(dataSPO, '%f %f', ...
     'delimiter','\t');
 
 fclose(dataMLO);
@@ -28,30 +28,27 @@ fclose(dataSPO);
 
 % format of .txt files is year, co2 value
 LJOyear = valsLJO{1};
-LJOflag = valsLJO{2};
-LJOco2 = valsLJO{3};
+LJOco2 = valsLJO{2};
 
 MLOyear = valsMLO{1};
-MLOflag = valsMLO{2};
-MLOco2 = valsMLO{3};
+MLOco2 = valsMLO{2};
 
 SPOyear = valsSPO{1};
-SPOflag = valsSPO{2};
-SPOco2 = valsSPO{3};
+SPOco2 = valsSPO{2};
 
 % remove flagged data
 for i = 1:length(MLOco2)
-    if MLOflag(i) ~= 0
+    if MLOco2(i) == -99.99
         MLOco2(i) = nan;
     end
 end
 for i = 1:length(LJOco2)
-    if LJOflag(i) ~= 0
+    if LJOco2(i) == -99.99
         LJOco2(i) = nan;
     end
 end
 for i = 1:length(SPOco2)
-    if SPOflag(i) ~= 0
+    if SPOco2(i) == -99.99
         SPOco2(i) = nan;
     end
 end
@@ -59,64 +56,9 @@ end
 % remove nan's
 % TODO: if time, go back and change this to a linear interpolation
 addpath('/Users/juliadohner/Documents/MATLAB/SIOC_221A/HW9/Inpaint_nans/Inpaint_nans');
-MLOyear = inpaint_nans(MLOyear);
 MLOco2 = inpaint_nans(MLOco2);
-LJOyear = inpaint_nans(LJOyear);
 LJOco2 = inpaint_nans(LJOco2);
-SPOyear = inpaint_nans(SPOyear);
 SPOco2 = inpaint_nans(SPOco2);
-
-
-%% load CO2 data - monthly
-% 
-% dataMLO = fopen('monthly_flask_co2_mlo_JLD.txt');
-% dataLJO = fopen('monthly_flask_co2_ljo_JLD.txt');
-% dataSPO = fopen('monthly_flask_co2_spo_JLD.txt');
-% 
-% valsMLO = textscan(dataMLO, '%f %f', ...
-%     'delimiter','\t');
-% valsLJO = textscan(dataLJO, '%f %f', ...
-%     'delimiter','\t');
-% valsSPO = textscan(dataSPO, '%f %f', ...
-%     'delimiter','\t');
-% 
-% fclose(dataMLO);
-% fclose(dataLJO);
-% fclose(dataSPO);
-% 
-% % format of .txt files is year, co2 value
-% LJOyear = valsLJO{1};
-% LJOco2 = valsLJO{2};
-% 
-% MLOyear = valsMLO{1};
-% MLOco2 = valsMLO{2};
-% 
-% SPOyear = valsSPO{1};
-% SPOco2 = valsSPO{2};
-% 
-% % remove flagged data
-% for i = 1:length(MLOco2)
-%     if MLOco2(i) == -99.99
-%         MLOco2(i) = nan;
-%     end
-% end
-% for i = 1:length(LJOco2)
-%     if LJOco2(i) == -99.99
-%         LJOco2(i) = nan;
-%     end
-% end
-% for i = 1:length(SPOco2)
-%     if SPOco2(i) == -99.99
-%         SPOco2(i) = nan;
-%     end
-% end
-% 
-% % remove nan's
-% % TODO: if time, go back and change this to a linear interpolation
-% addpath('/Users/juliadohner/Documents/MATLAB/SIOC_221A/HW9/Inpaint_nans/Inpaint_nans');
-% MLOco2 = inpaint_nans(MLOco2);
-% LJOco2 = inpaint_nans(LJOco2);
-% SPOco2 = inpaint_nans(SPOco2);
 
 
 %% inspect spacing of data
@@ -150,27 +92,14 @@ maxDiffSPO = max(SPO_t_diff);
 
 %% shorten data to same lengths
 
-% start records at earliest date in 1968 (LJO's latest start year)
-% startYear = LJOyear(1,1); % 1.969041100000000e+03 (latest start)
-% endYear = SPOyear(length(SPOyear),1); % earliest end
-% startIndex_LJO = find(LJOyear == startYear);
-% startIndex_MLO = find(MLOyear == startYear);
-% startIndex_SPO = find(SPOyear == startYear);
-% endIndex_LJO = find(LJOyear == endYear);
-% endIndex_MLO = find(MLOyear == endYear);
-% endIndex_SPO = find(SPOyear == endYear);
-
-startYear = 1985; % looks like resolution improves in LJO after 1985
-endYear = 2016;
-startIndex_LJO = find(floor(LJOyear) == startYear, 1);
-startIndex_MLO = find(floor(MLOyear) == startYear,1);
-startIndex_SPO = find(floor(SPOyear) == startYear,1);
-% use next 1,000 datapoints
-endIndex_LJO = startIndex_LJO+775;
-endIndex_MLO = startIndex_MLO+775;
-endIndex_SPO = startIndex_SPO+775;
-
-
+startYear = LJOyear(1,1); % 1.969041100000000e+03 (latest start)
+endYear = SPOyear(length(SPOyear),1); % earliest end
+startIndex_LJO = find(LJOyear == startYear);
+startIndex_MLO = find(MLOyear == startYear);
+startIndex_SPO = find(SPOyear == startYear);
+endIndex_LJO = find(LJOyear == endYear);
+endIndex_MLO = find(MLOyear == endYear);
+endIndex_SPO = find(SPOyear == endYear);
 
 % create new vectors
 LJOco2_2 = LJOco2(startIndex_LJO:endIndex_LJO);
@@ -192,28 +121,29 @@ legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa', '\fontsize{12}S
 
 %% compute spectra (from in-class coherence example)
 
+% three overlapping segments:
 N = length(LJOco2_2);
-Nseg = 8; % number of segments splitting data into
+Nseg = 4; % number of segments splitting data into
 segment_length = N/Nseg; % length of each chunk of data (aka segment length)
 M = segment_length/2;
-%Nseg = N/segment_length; % number of segments splitting data into
 
-% using three segments with 50% overlap (concatenating in lines below)
-% LJO_use=[reshape(LJOco2_2,segment_length,Nseg) reshape(LJOco2_2(M+1:end-M),segment_length,Nseg-1)];
-% MLO_use=[reshape(MLOco2_2,segment_length,Nseg) reshape(MLOco2_2(M+1:end-M),segment_length,Nseg-1)];
-% SPO_use=[reshape(SPOco2_2,segment_length,Nseg) reshape(SPOco2_2(M+1:end-M),segment_length,Nseg-1)];
-
-% changing to non-overlapping so can fiddle with number of segments:
-LJO_use=reshape(LJOco2_2,segment_length,Nseg);
-MLO_use=reshape(MLOco2_2,segment_length,Nseg);
-SPO_use=reshape(SPOco2_2,segment_length,Nseg);
-
-
-
+LJO_use = [reshape(LJOco2_2,segment_length,Nseg)];
+MLO_use=[reshape(MLOco2_2,segment_length,Nseg)];
+SPO_use=[reshape(SPOco2_2,segment_length,Nseg)];
 
 LJO_ft=fft(detrend(LJO_use).*(hann(segment_length)*ones(1,Nseg)));
 MLO_ft=fft(detrend(MLO_use).*(hann(segment_length)*ones(1,Nseg)));
 SPO_ft=fft(detrend(SPO_use).*(hann(segment_length)*ones(1,Nseg)));
+
+
+% % using three segments with 50% overlap (concatenating in lines below)
+% LJO_use=[reshape(LJOco2_2,segment_length,Nseg) reshape(LJOco2_2(M+1:end-M),segment_length,Nseg-1)];
+% MLO_use=[reshape(MLOco2_2,segment_length,Nseg) reshape(MLOco2_2(M+1:end-M),segment_length,Nseg-1)];
+% SPO_use=[reshape(SPOco2_2,segment_length,Nseg) reshape(SPOco2_2(M+1:end-M),segment_length,Nseg-1)];
+% 
+% LJO_ft=fft(detrend(LJO_use).*(hann(segment_length)*ones(1,3)));
+% MLO_ft=fft(detrend(MLO_use).*(hann(segment_length)*ones(1,3)));
+% SPO_ft=fft(detrend(SPO_use).*(hann(segment_length)*ones(1,3)));
 
 % question: mean is still in here. Do I want it?
 LJO_spec=sum(abs(LJO_ft(1:M+1,:)).^2,2)/N; % sum over all spectra (2nd dim)
@@ -242,9 +172,9 @@ frequency = frequency';
 
 figure('name','Power Spectra of CO2 Records');
 % TODO: fix the locations of the uncertainty estimates
-loglog(frequency,LJO_spec, '-r', [.2 .2],[err_low err_high]*LJO_spec(10), ...
-    frequency, MLO_spec, '-b',[.1 .1],[err_low err_high]*MLO_spec(10), ...
-    frequency, SPO_spec, '-g',[.3 .3],[err_low err_high]*SPO_spec(10))
+loglog(frequency,LJO_spec, '-r', [.2 .2],[err_low err_high]*LJO_spec(50), ...
+    frequency, MLO_spec, '-b',[.1 .1],[err_low err_high]*MLO_spec(50), ...
+    frequency, SPO_spec, '-g',[.3 .3],[err_low err_high]*SPO_spec(50))
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}ppm^2/cpy')
 title('\fontsize{16}Power Spectra of CO2 Records')

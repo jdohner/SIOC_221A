@@ -144,7 +144,7 @@ legend('\fontsize{12}Point Barrow','\fontsize{12}Mauna Loa', 'Location','northwe
 
 %% compute spectra (from in-class coherence example)
 
-segment_length = 44; % length of each chunk of data (aka segment length)
+segment_length = 100; % length of each chunk of data (aka segment length)
 
 % cut records down by two to make more easily divisible into segments
 length_1 = floor(length(MLOco2_1)/segment_length)*segment_length;
@@ -164,6 +164,7 @@ N2 = length_2;
 Nseg2 = N2/segment_length;
 M = segment_length/2;
 
+N = N1 + N2;
 Nseg = Nseg1 + Nseg2;
 
 % using three segments with 50% overlap (concatenating in lines below)
@@ -174,24 +175,32 @@ Nseg = Nseg1 + Nseg2;
 % changing to non-overlapping so can fiddle with number of segments:
 PTB_use1=reshape(PTBco2_1,segment_length,Nseg1);
 PTB_use2=reshape(PTBco2_2,segment_length,Nseg2);
+
+PTB_use = [PTB_use1 PTB_use2];
+
 MLO_use1=reshape(MLOco2_1,segment_length,Nseg1);
 MLO_use2=reshape(MLOco2_2,segment_length,Nseg2);
 
-% take fft of first and second bits of data
-PTB_ft1=fft(detrend(PTB_use1).*(hann(segment_length)*ones(1,Nseg1)));
-PTB_ft2=fft(detrend(PTB_use2).*(hann(segment_length)*ones(1,Nseg2)));
+MLO_use = [MLO_use1 MLO_use2];
 
-MLO_ft1=fft(detrend(MLO_use1).*(hann(segment_length)*ones(1,Nseg1)));
-MLO_ft2=fft(detrend(MLO_use2).*(hann(segment_length)*ones(1,Nseg2)));
-
-PTB_ft = [PTB_ft1 PTB_ft2];
-MLO_ft = [MLO_ft1 MLO_ft2];
+% take fft 
+PTB_ft = fft(detrend(PTB_use).*(hann(segment_length)*ones(1,Nseg)));
+MLO_ft = fft(detrend(MLO_use).*(hann(segment_length)*ones(1,Nseg)));
+% 
+% PTB_ft1=fft(detrend(PTB_use1).*(hann(segment_length)*ones(1,Nseg1)));
+% PTB_ft2=fft(detrend(PTB_use2).*(hann(segment_length)*ones(1,Nseg2)));
+% 
+% MLO_ft1=fft(detrend(MLO_use1).*(hann(segment_length)*ones(1,Nseg1)));
+% MLO_ft2=fft(detrend(MLO_use2).*(hann(segment_length)*ones(1,Nseg2)));
+% 
+% PTB_ft = [PTB_ft1 PTB_ft2];
+% MLO_ft = [MLO_ft1 MLO_ft2];
 
 % question: mean is still in here. Do I want it?
-PTB_spec=sum(abs(PTB_ft(1:M+1,:)).^2,2)/N1; % sum over all spectra (2nd dim)
+PTB_spec=sum(abs(PTB_ft(1:M+1,:)).^2,2)/N; % sum over all spectra (2nd dim)
 PTB_spec(2:end)=PTB_spec(2:end)*2; % multiply by 2 to make up for lost energy
 
-MLO_spec=sum(abs(MLO_ft(1:M+1,:)).^2,2)/N1;
+MLO_spec=sum(abs(MLO_ft(1:M+1,:)).^2,2)/N;
 MLO_spec(2:end)=MLO_spec(2:end)*2;
 
 
@@ -207,7 +216,7 @@ ratio_chi2 = err_high/err_low;
 
 % Question: I added the +1 to the M here to make it match the dims of the specs
 % (145x1) because means are still in there
-frequency=(1:M+1)/(segment_length/12);
+frequency=(1:M+1)/(segment_length); % in units cpd
 frequency = frequency';
 
 figure('name','Power Spectra of CO2 Records');
@@ -222,15 +231,15 @@ legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', 'Locati
 %% compute coherence
 
 % compute cross covariance of PTB/MLO
-ccLM=sum(PTB_ft(1:M+1,:).*conj(MLO_ft(1:M+1,:)),2)/N1;
-ccLM(2:end)=ccLM(2:end)*2;
+ccPM=sum(PTB_ft(1:M+1,:).*conj(MLO_ft(1:M+1,:)),2)/N;
+ccPM(2:end)=ccPM(2:end)*2;
 % compute coherence
-C_LM=abs(ccLM)./sqrt(PTB_spec.*MLO_spec);
-phase_LM = atan2(-imag(ccLM),real(ccLM));
-deltaPhase_LM = sqrt((1-C_LM.^2)./(abs(C_LM).^2*2*Nseg1)); 
+C_PM=abs(ccPM)./sqrt(PTB_spec.*MLO_spec);
+phase_PM = atan2(-imag(ccPM),real(ccPM));
+deltaPhase_PM = sqrt((1-C_PM.^2)./(abs(C_PM).^2*2*Nseg1)); 
 
 % % compute cross covariance of MLO/SPO
-% ccMS=sum(MLO_ft(1:M+1,:).*conj(SPO_ft(1:M+1,:)),2)/N1;
+% ccMS=sum(MLO_ft(1:M+1,:).*conj(SPO_ft(1:M+1,:)),2)/N;
 % ccMS(2:end)=ccMS(2:end)*2;
 % % compute coherence
 % C_MS=abs(ccMS)./sqrt(MLO_spec.*SPO_spec);
@@ -240,27 +249,26 @@ deltaPhase_LM = sqrt((1-C_LM.^2)./(abs(C_LM).^2*2*Nseg1));
 %% uncertainty estimate 
 
 alpha = 0.05; % 95% confidence level
-gamma_threshold= sqrt(1-alpha^(1/(Nseg1-1)));
+gamma_threshold= sqrt(1-alpha^(1/(Nseg-1)));
 
 
 %% plot the coherence
 
 figure('name','Coherence Plots of CO2 Records');
-subplot(2,1,1)
-plot(frequency, C_LM,[frequency(1) frequency(end)],[gamma_threshold gamma_threshold]);
+plot(frequency, C_PM,[frequency(1) frequency(end)],[gamma_threshold gamma_threshold]);
 axis tight;
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}coherence')
 title('\fontsize{16}Coherence of CO2 Records (LJO and MLO)')
 legend('\fontsize{12}La Jolla vs. Mauna Loa','\fontsize{12}Uncertainty Threshold','Location','southeast');
 
-subplot(2,1,2)
-plot(frequency, C_MS,[frequency(1) frequency(end)],[gamma_threshold gamma_threshold]); 
-axis tight
-xlabel('\fontsize{14}cycles per year')
-ylabel('\fontsize{14}coherence')
-title('\fontsize{16}Coherence of CO2 Records (MLO and SPO)')
-legend('\fontsize{12}Mauna Loa vs. South Pole','\fontsize{12}Uncertainty Threshold','Location','southeast');
+% subplot(2,1,2)
+% plot(frequency, C_MS,[frequency(1) frequency(end)],[gamma_threshold gamma_threshold]); 
+% axis tight
+% xlabel('\fontsize{14}cycles per year')
+% ylabel('\fontsize{14}coherence')
+% title('\fontsize{16}Coherence of CO2 Records (MLO and SPO)')
+% legend('\fontsize{12}Mauna Loa vs. South Pole','\fontsize{12}Uncertainty Threshold','Location','southeast');
 
 % Question: is this threshold right? seems really high... but I suppose it's that 5%
 % of the data will be above the threshold just due to random chance, so it should be
@@ -274,7 +282,7 @@ legend('\fontsize{12}Mauna Loa vs. South Pole','\fontsize{12}Uncertainty Thresho
 % Notes)
 % Question: what are the units on the y axis? (again, read lec 15 notes)
 figure('name','Phase Plot for Mauna Loa and South Pole Coherence');
-semilogx(frequency,[phase_MS phase_MS+deltaPhase_MS phase_MS-deltaPhase_MS]);
+semilogx(frequency,[phase_PM phase_PM+deltaPhase_PM phase_PM-deltaPhase_PM]);
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}phase units')
 title('\fontsize{16}Phase Plot for Mauna Loa and South Pole Coherence')
