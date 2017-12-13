@@ -1,4 +1,4 @@
-% file SIOC 221A HW 9
+% file SIOC 221A HW 9 - daily
 % 
 % author Julia Dohner
 %
@@ -144,7 +144,7 @@ legend('\fontsize{12}Point Barrow','\fontsize{12}Mauna Loa', 'Location','northwe
 
 %% compute spectra (from in-class coherence example)
 
-segment_length = 100; % length of each chunk of data (aka segment length)
+segment_length = 175; % length of each chunk of data (aka segment length)
 
 % cut records down by two to make more easily divisible into segments
 length_1 = floor(length(MLOco2_1)/segment_length)*segment_length;
@@ -216,15 +216,21 @@ ratio_chi2 = err_high/err_low;
 
 % Question: I added the +1 to the M here to make it match the dims of the specs
 % (145x1) because means are still in there
-frequency=(1:M+1)/(segment_length); % in units cpd
+frequency=(1:M+1)/(segment_length/365); % in units cpy
 frequency = frequency';
+
+% %M should equal rows/2
+% 
+% frequency=(0:500)/(361*1000)*3600; % cph - 361*3600 (361 is data spacing)
+% frequency = (0:2078-1)/(2*2078*361)*(24*3600); % cpd - 361*24*3600
+
 
 figure('name','Power Spectra of CO2 Records');
 % TODO: fix the locations of the uncertainty estimates
 loglog(frequency,PTB_spec, '-r', [.2 .2],[err_low err_high]*PTB_spec(10), ...
     frequency, MLO_spec, '-b',[.1 .1],[err_low err_high]*MLO_spec(10))
-xlabel('\fontsize{14}cycles per year')
-ylabel('\fontsize{14}ppm^2/cpy')
+xlabel('\fontsize{14}cycles per day')
+ylabel('\fontsize{14}ppm^2/cpd')
 title('\fontsize{16}Power Spectra of CO2 Records')
 legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', 'Location','northeast');
 
@@ -278,11 +284,10 @@ legend('\fontsize{12}La Jolla vs. Mauna Loa','\fontsize{12}Uncertainty Threshold
 
 %% plot the phase
 
-% Question: I'm having a hard time understanding this plot (read Lec 15
-% Notes)
-% Question: what are the units on the y axis? (again, read lec 15 notes)
 figure('name','Phase Plot for Mauna Loa and South Pole Coherence');
-semilogx(frequency,[phase_PM phase_PM+deltaPhase_PM phase_PM-deltaPhase_PM]);
+semilogx(frequency,[phase_PM phase_PM+deltaPhase_PM phase_PM-deltaPhase_PM],frequency, pi);
+refline(0,pi);
+refline(0,-pi);
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}phase units')
 title('\fontsize{16}Phase Plot for Mauna Loa and South Pole Coherence')

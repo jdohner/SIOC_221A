@@ -1,11 +1,11 @@
-% file SIOC 221A HW 9
+% file SIOC 221A HW 9 - monthly
 % 
 % author Julia Dohner
 %
 % due date December 13, 2017
 
-% analysis of weekly flask-collected co2 data at Mauna Loa and La Jolla
-% stations
+% analysis of monthly flask-collected co2 data at Mauna Loa, La Jolla and
+% the South Pole stations
 
 clear all; close all;
 
@@ -54,7 +54,6 @@ for i = 1:length(SPOco2)
 end
 
 % remove nan's
-% TODO: if time, go back and change this to a linear interpolation
 addpath('/Users/juliadohner/Documents/MATLAB/SIOC_221A/HW9/Inpaint_nans/Inpaint_nans');
 MLOco2 = inpaint_nans(MLOco2);
 LJOco2 = inpaint_nans(LJOco2);
@@ -92,7 +91,7 @@ maxDiffSPO = max(SPO_t_diff);
 
 %% shorten data to same lengths
 
-startYear = LJOyear(1,1); % 1.969041100000000e+03 (latest start)
+startYear = LJOyear(1,1); % latest start
 endYear = SPOyear(length(SPOyear),1); % earliest end
 startIndex_LJO = find(LJOyear == startYear);
 startIndex_MLO = find(MLOyear == startYear);
@@ -109,24 +108,24 @@ MLOyear_2 = MLOyear(startIndex_MLO:endIndex_MLO);
 SPOco2_2 = SPOco2(startIndex_SPO:endIndex_SPO);
 SPOyear_2 = SPOyear(startIndex_SPO:endIndex_SPO);
 
-
 % plot timeseries
 figure('name','Atmospheric CO2 Timeseries');
-plot(LJOyear_2,LJOco2_2, '-r', MLOyear_2,MLOco2_2,'-b',SPOyear_2,SPOco2_2,'-g');
+plot(LJOyear_2,LJOco2_2, MLOyear_2,MLOco2_2,SPOyear_2,SPOco2_2);
 xlabel('\fontsize{14}year')
 ylabel('\fontsize{14}ppm')
-title('\fontsize{16}Atmospheric CO2 Records')
-legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa', '\fontsize{12}South Pole','Location','northwest');
+%title('\fontsize{20}Atmospheric CO2 Records')
+legend('\fontsize{18}La Jolla Station','\fontsize{18}Mauna Loa', '\fontsize{18}South Pole','Location','southeast');
 
 
 %% compute spectra (from in-class coherence example)
 
-% three overlapping segments:
 N = length(LJOco2_2);
-Nseg = 4; % number of segments splitting data into
+Nseg = 8; % number of segments splitting data into
 segment_length = N/Nseg; % length of each chunk of data (aka segment length)
 M = segment_length/2;
 
+
+% 72-long segments
 LJO_use = [reshape(LJOco2_2,segment_length,Nseg)];
 MLO_use=[reshape(MLOco2_2,segment_length,Nseg)];
 SPO_use=[reshape(SPOco2_2,segment_length,Nseg)];
@@ -135,17 +134,6 @@ LJO_ft=fft(detrend(LJO_use).*(hann(segment_length)*ones(1,Nseg)));
 MLO_ft=fft(detrend(MLO_use).*(hann(segment_length)*ones(1,Nseg)));
 SPO_ft=fft(detrend(SPO_use).*(hann(segment_length)*ones(1,Nseg)));
 
-
-% % using three segments with 50% overlap (concatenating in lines below)
-% LJO_use=[reshape(LJOco2_2,segment_length,Nseg) reshape(LJOco2_2(M+1:end-M),segment_length,Nseg-1)];
-% MLO_use=[reshape(MLOco2_2,segment_length,Nseg) reshape(MLOco2_2(M+1:end-M),segment_length,Nseg-1)];
-% SPO_use=[reshape(SPOco2_2,segment_length,Nseg) reshape(SPOco2_2(M+1:end-M),segment_length,Nseg-1)];
-% 
-% LJO_ft=fft(detrend(LJO_use).*(hann(segment_length)*ones(1,3)));
-% MLO_ft=fft(detrend(MLO_use).*(hann(segment_length)*ones(1,3)));
-% SPO_ft=fft(detrend(SPO_use).*(hann(segment_length)*ones(1,3)));
-
-% question: mean is still in here. Do I want it?
 LJO_spec=sum(abs(LJO_ft(1:M+1,:)).^2,2)/N; % sum over all spectra (2nd dim)
 LJO_spec(2:end)=LJO_spec(2:end)*2; % multiply by 2 to make up for lost energy
 
@@ -157,7 +145,6 @@ SPO_spec(2:end)=SPO_spec(2:end)*2;
 
 %% uncertainty estimate on spectra
 
-% question: is this nu calculation right??
 nu = 1.9*2*Nseg; % DOF = 2*number of segments*1.9 (1.9 for the Hanning)
 err_high = nu/chi2inv(0.05/2,nu);
 err_low = nu/chi2inv(1-0.05/2,nu);
@@ -165,20 +152,18 @@ ratio_chi2 = err_high/err_low;
 
 %% plot spectra
 
-% Question: I added the +1 to the M here to make it match the dims of the specs
-% (145x1) because means are still in there
 frequency=(1:M+1)/(segment_length/12);
 frequency = frequency';
 
 figure('name','Power Spectra of CO2 Records');
-% TODO: fix the locations of the uncertainty estimates
-loglog(frequency,LJO_spec, '-r', [.2 .2],[err_low err_high]*LJO_spec(50), ...
-    frequency, MLO_spec, '-b',[.1 .1],[err_low err_high]*MLO_spec(50), ...
-    frequency, SPO_spec, '-g',[.3 .3],[err_low err_high]*SPO_spec(50))
+loglog(frequency,LJO_spec,  ...
+    frequency, MLO_spec,  ...
+    frequency, SPO_spec, [.2 .2],[err_low err_high]*5)
+axis([0 10 -1000 1000])
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}ppm^2/cpy')
 title('\fontsize{16}Power Spectra of CO2 Records')
-legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole','Location','northeast');
+legend('\fontsize{12}La Jolla Station','\fontsize{12}Mauna Loa Station', '\fontsize{12}South Pole','\fontsize{12}Uncertainty Estimate','Location','northeast');
 
 %% compute coherence
 
@@ -213,7 +198,7 @@ axis tight;
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}coherence')
 title('\fontsize{16}Coherence of CO2 Records (LJO and MLO)')
-legend('\fontsize{12}La Jolla vs. Mauna Loa','\fontsize{12}Uncertainty Threshold','Location','southeast');
+legend('\fontsize{12}La Jolla vs. Mauna Loa','\fontsize{12}Uncertainty Threshold','Location','northeast');
 
 subplot(2,1,2)
 plot(frequency, C_MS,[frequency(1) frequency(end)],[gamma_threshold gamma_threshold]); 
@@ -221,23 +206,30 @@ axis tight
 xlabel('\fontsize{14}cycles per year')
 ylabel('\fontsize{14}coherence')
 title('\fontsize{16}Coherence of CO2 Records (MLO and SPO)')
-legend('\fontsize{12}Mauna Loa vs. South Pole','\fontsize{12}Uncertainty Threshold','Location','southeast');
+legend('\fontsize{12}Mauna Loa vs. South Pole','\fontsize{12}Uncertainty Threshold','Location','northeast');
 
-% Question: is this threshold right? seems really high... but I suppose it's that 5%
-% of the data will be above the threshold just due to random chance, so it should be
-% high?
-% "set a threshold for evaluating whether a calculated coherence exceeds 
-% what we might expect from random white noise"
 
 %% plot the phase
 
-% Question: I'm having a hard time understanding this plot (read Lec 15
-% Notes)
-% Question: what are the units on the y axis? (again, read lec 15 notes)
-figure('name','Phase Plot for Mauna Loa and South Pole Coherence');
-semilogx(frequency,[phase_MS phase_MS+deltaPhase_MS phase_MS-deltaPhase_MS]);
+figure('name','Phase Plots');
+subplot(2,1,1)
+semilogx(frequency,[phase_LM phase_LM+deltaPhase_LM phase_LM-deltaPhase_LM]);
+refline(0,pi);
+refline(0,-pi);
 xlabel('\fontsize{14}cycles per year')
-ylabel('\fontsize{14}phase units')
-title('\fontsize{16}Phase Plot for Mauna Loa and South Pole Coherence')
-legend('\fontsize{12}phase', 'phase+delta phase','phase-delta phase','Location','northeast');
+ylabel('\fontsize{14}phase')
+title('\fontsize{16}Phase Plot for Mauna Loa and La Jolla Coherence')
+legend('\fontsize{12}phase', 'phase+delta phase','phase-delta phase','Location','northwest');
 axis tight
+
+subplot(2,1,2)
+semilogx(frequency,[phase_MS phase_MS+deltaPhase_MS phase_MS-deltaPhase_MS]);
+refline(0,pi);
+refline(0,-pi);
+xlabel('\fontsize{14}cycles per year')
+ylabel('\fontsize{14}phase')
+title('\fontsize{16}Phase Plot for Mauna Loa and South Pole Coherence')
+legend('\fontsize{12}phase', 'phase+delta phase','phase-delta phase','Location','northwest');
+axis tight
+
+
